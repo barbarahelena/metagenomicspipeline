@@ -1,0 +1,6 @@
+repository_type: pipeline
+template:
+  author: barbarahelena
+  description: shotgun metagenomics pipeline to obtain relative abundances, pathway
+    abundances and strain-sharing using biobakery software
+  name: metagenomicspipeline
