@@ -287,7 +287,8 @@
     ],
     "properties": {
         "subsamplelevel": {
-            "type": "number"
+            "type": "number",
+            "default": 20000000
         }
     }
 }
