@@ -284,5 +284,10 @@
         {
             "$ref": "#/definitions/generic_options"
         }
-    ]
+    ],
+    "properties": {
+        "subsamplelevel": {
+            "type": "number"
+        }
+    }
 }
