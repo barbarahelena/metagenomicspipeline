@@ -1,4 +1,4 @@
-process HUMANN_DB {
+process HUMANN_MAKEDB {
     label 'process_medium'
     label 'humann'
     storeDir 'db'

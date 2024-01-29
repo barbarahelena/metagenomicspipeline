@@ -77,5 +77,4 @@ process BOWTIE2_ALIGN {
         pigz: \$( pigz --version 2>&1 | sed 's/pigz //g' )
     END_VERSIONS
     """
-
 }

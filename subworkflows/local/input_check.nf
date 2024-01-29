@@ -2,14 +2,14 @@
 // Check input samplesheet and get read channels
 //
 
-include { SAMPLESHEET_CHECK } from '../../modules/local/samplesheet_check'
+include { SAMPLESHEETCHECK } from '../../modules/local/samplesheetcheck'
 
 workflow INPUT_CHECK {
     take:
     samplesheet // file: /path/to/samplesheet.csv
 
     main:
-    SAMPLESHEET_CHECK ( samplesheet )
+    SAMPLESHEETCHECK ( samplesheet )
         .csv
         .splitCsv ( header:true, sep:',' )
         .map { create_fastq_channel(it) }
@@ -17,7 +17,7 @@ workflow INPUT_CHECK {
 
     emit:
     reads                                     // channel: [ val(meta), [ reads ] ]
-    versions = SAMPLESHEET_CHECK.out.versions // channel: [ versions.yml ]
+    versions = SAMPLESHEETCHECK.out.versions // channel: [ versions.yml ]
 }
 
 // Function to get list of [ meta, [ fastq_1, fastq_2 ] ]

@@ -37,13 +37,13 @@ include { BOWTIE2_BUILD                     } from '../modules/local/bowtie2/bui
 include { SAMTOOLS_INDEX                    } from '../modules/local/samtools/index'
 include { SAMTOOLS_STATS                    } from '../modules/local/samtools/stats'
 include { SUBSAMPLING                       } from '../modules/local/subsampling'
-include { METAPHLAN_DB                      } from '../modules/local/metaphlan/makedb'
+include { METAPHLAN_MAKEDB                  } from '../modules/local/metaphlan/makedb'
 include { METAPHLAN_METAPHLAN               } from '../modules/local/metaphlan/metaphlan'
 include { METAPHLAN_MERGETABLES             } from '../modules/local/metaphlan/mergetables'
-include { HUMANN_DB                         } from '../modules/local/humann/makedb'
+include { HUMANN_MAKEDB                     } from '../modules/local/humann/makedb'
 include { HUMANN_HUMANN                     } from '../modules/local/humann/humann'
-include { HUMANN_MERGETABLES_GENE           } from '../modules/local/humann/mergetables_gene'
-include { HUMANN_MERGETABLES_PATH           } from '../modules/local/humann/mergetables_path'
+include { HUMANN_MERGETABLESGENE            } from '../modules/local/humann/mergetablesgene'
+include { HUMANN_MERGETABLESPATH            } from '../modules/local/humann/mergetablespath'
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
@@ -164,14 +164,14 @@ workflow METAGENOMICSPIPELINE {
     //
     // MODULE: Metaphlan database
     //
-    METAPHLAN_DB ( )
+    METAPHLAN_MAKEDB ( )
 
     //
     // MODULE: Metaphlan profiling
     //
     METAPHLAN_METAPHLAN (
         SUBSAMPLING.out.reads,
-        METAPHLAN_DB.out.db
+        METAPHLAN_MAKEDB.out.db
     )
 
     ch_versions        = ch_versions.mix( METAPHLAN_METAPHLAN.out.versions.first() )
@@ -188,7 +188,7 @@ workflow METAGENOMICSPIPELINE {
     //
     // MODULE: HUMANN get database
     //
-    HUMANN_DB ( )
+    HUMANN_MAKEDB ( )
 
     //
     // MODULE: HUMANN
@@ -197,7 +197,7 @@ workflow METAGENOMICSPIPELINE {
 
     HUMANN_HUMANN(
         ch_humann_input,
-        HUMANN_DB.out.db
+        HUMANN_MAKEDB.out.db
     )
 
     //
@@ -206,10 +206,10 @@ workflow METAGENOMICSPIPELINE {
     ch_pathways_humann = HUMANN_HUMANN.out.pathways.collect {it[1]}
     ch_genes_humann = HUMANN_HUMANN.out.genes.collect {it[1]}
 
-    HUMANN_MERGETABLES_PATH(
+    HUMANN_MERGETABLESPATH(
         ch_pathways_humann
     )
-    HUMANN_MERGETABLES_GENE(
+    HUMANN_MERGETABLESGENE(
         ch_genes_humann
     )
 

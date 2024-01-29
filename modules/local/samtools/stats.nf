@@ -1,5 +1,5 @@
 process SAMTOOLS_STATS {
-    tag "$meta.id"
+     tag "$meta.id"
     label 'process_single'
     label 'samtools'
 

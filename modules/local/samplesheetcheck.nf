@@ -1,4 +1,4 @@
-process SAMPLESHEET_CHECK {
+process SAMPLESHEETCHECK {
     tag "$samplesheet"
     label 'process_single'
     label 'python'

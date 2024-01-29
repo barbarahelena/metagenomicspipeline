@@ -1,4 +1,4 @@
-process HUMANN_MERGETABLES_GENE {
+process HUMANN_MERGETABLESGENE {
     label 'process_single'
     label 'humann'
 

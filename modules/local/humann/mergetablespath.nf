@@ -1,4 +1,4 @@
-process HUMANN_MERGETABLES_PATH {
+process HUMANN_MERGETABLESPATH {
     label 'process_single'
     label 'humann'
 
