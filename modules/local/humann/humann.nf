@@ -21,6 +21,7 @@ process HUMANN_HUMANN {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def input_type = "$input" =~ /.*\.(fastq.gz)$/ ? "fastq.gz" : "$input" =~ /.*\.(fastq|fq)$/ ? "fastq" : "$input" =~ /.*\.(fasta|fna|fa)/ ? "fasta" : "sam"
+    def profile = "$taxprofile" == true ? "" : "--taxonomic-profile $taxprofile"
 
     """
     mkdir humann_results
@@ -31,7 +32,7 @@ process HUMANN_HUMANN {
         --output humann_results/ \\
         --output-basename ${prefix} \\
         --o-log logs/${prefix}.log \\
-        --taxonomic-profile $taxprofile \\
+        $profile \\
         --threads $task.cpus \\
         --memory-use maximum \\
         --search-mode uniref90 \\

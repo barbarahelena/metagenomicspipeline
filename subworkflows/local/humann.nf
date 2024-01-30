@@ -13,14 +13,13 @@ workflow HUMANN {
     reads
 
     main:
-
     ch_versions = Channel.empty()
-    ch_multiqc_files = Channel.empty()
 
     //
     // MODULE: HUMANN get database
     //
     HUMANN_MAKEDB ( )
+
     //
     // MODULE: HUMANN
     //
@@ -28,21 +27,24 @@ workflow HUMANN {
         reads,
         HUMANN_MAKEDB.out.db
     )
+    ch_versions = ch_versions.mix( HUMANN_HUMANN.out.versions.first() ) // only once since all use same container/conda
+
     //
-    // MODULE: HUMANN tables
+    // MODULE: HUMANN fix tables: pathways
     //
     ch_pathways_humann = HUMANN_HUMANN.out.pathways.collect {it[1]}
-    ch_genes_humann = HUMANN_HUMANN.out.genes.collect {it[1]}
     HUMANN_MERGETABLESPATH(
         ch_pathways_humann
     )
+    //
+    // MODULE: HUMANN fix tables: genes
+    //
+    ch_genes_humann = HUMANN_HUMANN.out.genes.collect {it[1]}
     HUMANN_MERGETABLESGENE(
         ch_genes_humann
     )
 
-    ch_versions = ch_versions.mix( HUMANN_HUMANN.out.versions.first() )
-
     emit:
-    versions = ch_versions                     // channel: [ versions.yml ]
+    versions = ch_versions                   // channel: [ versions.yml ]
 }
 
