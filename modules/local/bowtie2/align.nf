@@ -6,8 +6,6 @@ process BOWTIE2_ALIGN {
     input:
     tuple val(meta) , path(reads)
     path(index)
-    val   save_unaligned
-    val   sort_bam
 
     output:
     tuple val(meta), path("*.{bam,sam}"), emit: aligned
@@ -22,9 +20,6 @@ process BOWTIE2_ALIGN {
     def args = task.ext.args ?: ""
     def args2 = task.ext.args2 ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def unaligned = save_unaligned ? "--un-conc-gz ${prefix}.unmapped.fastq.gz" : ""
-    def reads_args = "-1 ${reads[0]} -2 ${reads[1]}"
-    def samtools_command = sort_bam ? 'sort' : 'view'
     def extension_pattern = /(--output-fmt|-O)+\s+(\S+)/
     def extension = (args2 ==~ extension_pattern) ? (args2 =~ extension_pattern)[0][2].toLowerCase() : "bam"
 
@@ -35,19 +30,19 @@ process BOWTIE2_ALIGN {
 
     bowtie2 \\
         -x \$INDEX \\
-        $reads_args \\
+        -1 ${reads[0]} -2 ${reads[1]} \\
         --threads $task.cpus \\
-        $unaligned \\
+        --un-conc-gz ${prefix}_mapped.fastq.gz \\
         $args \\
         2> >(tee ${prefix}.bowtie2.log >&2) \\
-        | samtools $samtools_command $args2 --threads $task.cpus -o ${prefix}.${extension} -
+        | samtools sort $args2 --threads $task.cpus -o ${prefix}.${extension} -
 
     if [ -f ${prefix}.unmapped.fastq.1.gz ]; then
-        mv ${prefix}.unmapped.fastq.1.gz ${prefix}.unmapped_1.fastq.gz
+        mv ${prefix}.unmapped.fastq.1.gz ${prefix}_unmapped_1.fastq.gz
     fi
 
     if [ -f ${prefix}.unmapped.fastq.2.gz ]; then
-        mv ${prefix}.unmapped.fastq.2.gz ${prefix}.unmapped_2.fastq.gz
+        mv ${prefix}.unmapped.fastq.2.gz ${prefix}_unmapped_2.fastq.gz
     fi
 
     cat <<-END_VERSIONS > versions.yml
