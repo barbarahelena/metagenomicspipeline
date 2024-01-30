@@ -87,7 +87,6 @@ workflow PREPROCESSING {
                 params.subsamplelevel
             )
             ch_versions = ch_versions.mix(SUBSAMPLING.out.versions.first())
-            ch_multiqc_files = ch_multiqc_files.mix( SUBSAMPLING.out.log ) // seqkit stats
             ch_reads = SUBSAMPLING.out.reads
         }
     } else {
