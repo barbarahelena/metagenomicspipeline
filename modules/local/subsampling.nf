@@ -9,8 +9,7 @@ process SUBSAMPLING {
 
     output:
     tuple val(meta), path('*_{1,2}_subsampled.fastq.gz')  , emit: reads
-    tuple val(meta), path('*_concat.fastq.gz')            , emit: concats
-    tuple val(meta), path('*_{1,2,12}.out')               , emit: log
+    tuple val(meta), path('*_{1,2}.out')                  , emit: log
     path "versions.yml"                                   , emit: versions
 
     when:
@@ -27,11 +26,9 @@ process SUBSAMPLING {
 
     seqtk sample -s1234 ${prefix}_1.fastq.gz $subsample_n | gzip >  ${prefix}_1_subsampled.fastq.gz
     seqtk sample -s1234 ${prefix}_2.fastq.gz $subsample_n | gzip >  ${prefix}_2_subsampled.fastq.gz
-    cat ${prefix}_1_subsampled.fastq.gz ${prefix}_2_subsampled.fastq.gz > ${prefix}_concat.fastq.gz
 
     seqkit stats -b ${prefix}_1.fastq.gz > ${prefix}_1.out
     seqkit stats -b ${prefix}_2.fastq.gz > ${prefix}_2.out
-    seqkit stats -b ${prefix}_concat.fastq.gz > ${prefix}_12.out
         
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
