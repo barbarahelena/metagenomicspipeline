@@ -33,6 +33,7 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 */
 include { METAPHLAN                         } from '../subworkflows/local/metaphlan'
 include { HUMANN                            } from '../subworkflows/local/humann'
+include { STRAINPHLAN                       } from '../subworkflows/local/strainphlan'
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
@@ -68,9 +69,7 @@ workflow METAGEN {
     //
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
     //
-    INPUT_CHECK (
-        file(params.input)
-    )
+    INPUT_CHECK ( file(params.input) )
     ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
 
     //
@@ -81,27 +80,39 @@ workflow METAGEN {
         ch_reference,
         ch_adapterlist,
         params.save_trimmed_fail,
-        params.save_unaligned,
-        params.sort_bam
+        params.skip_preprocessing,
+        params.skip_qualityfilter,
+        params.skip_humanfilter,
+        params.skip_subsampling,
+        params.skip_humann
     )
     ch_versions = ch_versions.mix(PREPROCESSING.out.versions)
     
     //
     // SUBWORKFLOW: Metaphlan
     //
-    METAPHLAN (
-        PREPROCESSING.out.reads
-    )
-    ch_versions = ch_versions.mix(METAPHLAN.out.versions)
-    ch_humann_input = PREPROCESSING.out.concats.join(METAPHLAN.out.profiles).groupTuple()
+    if(params.skip_metaphlan == false){
+        METAPHLAN ( PREPROCESSING.out.reads )
+        ch_versions = ch_versions.mix(METAPHLAN.out.versions)
+        ch_humann_input = PREPROCESSING.out.concats.join(METAPHLAN.out.profiles).groupTuple()
 
+        //
+        // SUBWORKFLOW: StrainPhlan
+        //
+        if(params.skip_strainphlan == false){
+            STRAINPHLAN ( METAPHLAN.out.profiles )
+            ch_versions = ch_versions.mix(STRAINPHLAN.out.versions)
+        }
+    } else{
+        ch_humann_input = PREPROCESSING.out.concats.join(params.skip_metaphlan).groupTuple()
+    }
     //
     // SUBWORKFLOW: HUMAnN
     //
-    HUMANN (
-        ch_humann_input
-    )
-    ch_versions = ch_versions.mix(HUMANN.out.versions)
+    if(params.skip_humann == false) {
+        HUMANN ( ch_humann_input )
+        ch_versions = ch_versions.mix(HUMANN.out.versions)
+    }
 
     //
     // Subworkflow: Collect software versions
@@ -122,10 +133,11 @@ workflow METAGEN {
     ch_multiqc_files = Channel.empty()
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
-    ch_multiqc_files = ch_multiqc_files.mix(METAPHLAN.out.multiqc_metaphlan.collect())
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
     ch_multiqc_files = ch_multiqc_files.mix(PREPROCESSING.out.fastqc1.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(PREPROCESSING.out.fastqc2.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(PREPROCESSING.out.mqc.collect())
+    ch_multiqc_files = ch_multiqc_files.mix(METAPHLAN.out.mqc.collect())
 
     MULTIQC (
         ch_multiqc_files.collect(),
