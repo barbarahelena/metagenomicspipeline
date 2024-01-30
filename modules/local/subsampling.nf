@@ -28,9 +28,9 @@ process SUBSAMPLING {
 	seqtk sample -s128 ${prefix}_2.fastq.gz $subsample_n | gzip >  ${prefix}_2_subsampled.fastq.gz
     cat ${prefix}_1_subsampled.fastq.gz ${prefix}_2_subsampled.fastq.gz > ${prefix}_concat.fastq.gz
 
-    cat <<-END_VERSIONS > versions.yml
+    cat <<-'END_VERSIONS' > versions.yml
     "${task.process}":
-        seqtk: \$(seqtk --version 2>&1 | sed -e "s/seqtk //g")
+        seqtk: \$(echo \$(seqtk 2>&1) | sed 's/^.*Version: //; s/ .*//')
     END_VERSIONS
     """
 
@@ -41,7 +41,7 @@ process SUBSAMPLING {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        seqtk: \$(seqtk --version 2>&1 | sed -e "s/seqtk //g")
+        seqtk: \$(echo \$(seqtk 2>&1) | sed 's/^.*Version: //; s/ .*\$//')
     END_VERSIONS
     """
 }

@@ -2,6 +2,7 @@ process BOWTIE2_BUILD {
     tag "$fasta"
     label 'process_high'
     label 'bowtie2'
+    storeDir 'db'
 
     input:
     path(fasta)

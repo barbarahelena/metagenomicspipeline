@@ -31,23 +31,13 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
     IMPORT LOCAL MODULES/SUBWORKFLOWS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-include { FASTP                             } from '../modules/local/fastp'
-include { BOWTIE2_ALIGN                     } from '../modules/local/bowtie2/align'
-include { BOWTIE2_BUILD                     } from '../modules/local/bowtie2/build'
-include { SAMTOOLS_INDEX                    } from '../modules/local/samtools/index'
-include { SAMTOOLS_STATS                    } from '../modules/local/samtools/stats'
-include { SUBSAMPLING                       } from '../modules/local/subsampling'
-include { METAPHLAN_MAKEDB                  } from '../modules/local/metaphlan/makedb'
-include { METAPHLAN_METAPHLAN               } from '../modules/local/metaphlan/metaphlan'
-include { METAPHLAN_MERGETABLES             } from '../modules/local/metaphlan/mergetables'
-include { HUMANN_MAKEDB                     } from '../modules/local/humann/makedb'
-include { HUMANN_HUMANN                     } from '../modules/local/humann/humann'
-include { HUMANN_MERGETABLESGENE            } from '../modules/local/humann/mergetablesgene'
-include { HUMANN_MERGETABLESPATH            } from '../modules/local/humann/mergetablespath'
+include { METAPHLAN                         } from '../subworkflows/local/metaphlan'
+include { HUMANN                            } from '../subworkflows/local/humann'
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { INPUT_CHECK } from '../subworkflows/local/input_check'
+include { INPUT_CHECK                       } from '../subworkflows/local/input_check'
+include { PREPROCESSING                     } from '../subworkflows/local/preprocessing'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -58,8 +48,6 @@ include { INPUT_CHECK } from '../subworkflows/local/input_check'
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { FASTQC as FASTQC_UNPROCESSED      } from '../modules/nf-core/fastqc/main'
-include { FASTQC as FASTQC_PROCESSED        } from '../modules/nf-core/fastqc/main'
 include { MULTIQC                           } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS       } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
@@ -72,11 +60,10 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS       } from '../modules/nf-core/custom/du
 // Info required for completion email and summary
 def multiqc_report = []
 
-workflow METAGENOMICSPIPELINE {
-    ch_adapterlist = params.shortread_qc_adapterlist ? file(params.shortread_qc_adapterlist) : []
-    ch_reference = file(params.human_reference)
+workflow METAGEN {
+    ch_adapterlist = params.adapterlist ? file(params.adapterlist) : []
+    ch_reference = params.genome ? file(params.genome) : file(params.altgenome)
     ch_versions = Channel.empty()
-    ch_multiqc_files = Channel.empty()
 
     //
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
@@ -87,131 +74,34 @@ workflow METAGENOMICSPIPELINE {
     ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
 
     //
-    // MODULE: Run FastQC
+    // SUBWORKFLOW: preprocessing of reads (quality filter, human read filtering, subsampling)
     //
-    FASTQC_UNPROCESSED (
-        INPUT_CHECK.out.reads
+    PREPROCESSING (
+        INPUT_CHECK.out.reads,
+        ch_reference,
+        ch_adapterlist,
+        params.save_trimmed_fail,
+        params.save_unaligned,
+        params.sort_bam
     )
-    ch_versions = ch_versions.mix(FASTQC_UNPROCESSED.out.versions.first())
-
+    ch_versions = ch_versions.mix(PREPROCESSING.out.versions)
+    
     //
-    // MODULE: Fastp
+    // SUBWORKFLOW: Metaphlan
     //
-    FASTP (
-        INPUT_CHECK.out.reads, 
-        ch_adapterlist, 
-        false
+    METAPHLAN (
+        PREPROCESSING.out.reads
     )
-
-    ch_versions = ch_versions.mix( FASTP.out.versions.first() )
-    ch_multiqc_files = ch_multiqc_files.mix( FASTP.out.json )
+    ch_versions = ch_versions.mix(METAPHLAN.out.versions)
+    ch_humann_input = PREPROCESSING.out.concats.join(METAPHLAN.out.profiles).groupTuple()
 
     //
-    // MODULE: Run FastQC
+    // SUBWORKFLOW: HUMAnN
     //
-    FASTQC_PROCESSED (
-        FASTP.out.reads
+    HUMANN (
+        ch_humann_input
     )
-    ch_versions = ch_versions.mix(FASTQC_PROCESSED.out.versions.first())
-    //
-    // MODULE: Bowtie 2 build
-    //
-    BOWTIE2_BUILD (
-        ch_reference
-    )
-    ch_bowtie2_index = BOWTIE2_BUILD.out.index
-    ch_versions      = ch_versions.mix( BOWTIE2_BUILD.out.versions )
-
-    //
-    // MODULE: Bowtie 2 align
-    //
-    // Map, generate BAM with all reads and unmapped reads in FASTQ for downstream
-    BOWTIE2_ALIGN ( 
-        FASTP.out.reads, 
-        ch_bowtie2_index, 
-        true, 
-        true
-    )
-    ch_versions      = ch_versions.mix( BOWTIE2_ALIGN.out.versions.first() )
-    ch_multiqc_files = ch_multiqc_files.mix( BOWTIE2_ALIGN.out.log )
-
-    //
-    // MODULE: Index BAM with samtools
-    //
-    SAMTOOLS_INDEX ( 
-        BOWTIE2_ALIGN.out.aligned 
-    )
-    ch_versions      = ch_versions.mix( SAMTOOLS_INDEX.out.versions.first() )
-
-    bam_bai = BOWTIE2_ALIGN.out.aligned
-        .join(SAMTOOLS_INDEX.out.bai, remainder: true)
-
-    //
-    // MODULE: Samtools stats
-    //
-    SAMTOOLS_STATS ( 
-        bam_bai, 
-        ch_reference
-    )
-    ch_versions = ch_versions.mix(SAMTOOLS_STATS.out.versions.first())
-    ch_multiqc_files = ch_multiqc_files.mix( SAMTOOLS_STATS.out.stats )
-
-    SUBSAMPLING (
-        BOWTIE2_ALIGN.out.fastq,
-        params.subsamplelevel
-    )
-
-    //
-    // MODULE: Metaphlan database
-    //
-    METAPHLAN_MAKEDB ( )
-
-    //
-    // MODULE: Metaphlan profiling
-    //
-    METAPHLAN_METAPHLAN (
-        SUBSAMPLING.out.reads,
-        METAPHLAN_MAKEDB.out.db
-    )
-
-    ch_versions        = ch_versions.mix( METAPHLAN_METAPHLAN.out.versions.first() )
-
-    //
-    // MODULE: Metaphlan merge tables
-    //
-    ch_profiles_metaphlan = METAPHLAN_METAPHLAN.out.profile.collect {it[1]}
-
-    METAPHLAN_MERGETABLES ( ch_profiles_metaphlan )
-    ch_multiqc_files = ch_multiqc_files.mix( METAPHLAN_MERGETABLES.out.txt )
-    ch_versions = ch_versions.mix( METAPHLAN_MERGETABLES.out.versions )
-
-    //
-    // MODULE: HUMANN get database
-    //
-    HUMANN_MAKEDB ( )
-
-    //
-    // MODULE: HUMANN
-    //
-    ch_humann_input = SUBSAMPLING.out.concats.join(METAPHLAN_METAPHLAN.out.profile).groupTuple()
-
-    HUMANN_HUMANN(
-        ch_humann_input,
-        HUMANN_MAKEDB.out.db
-    )
-
-    //
-    // MODULE: HUMANN tables
-    //
-    ch_pathways_humann = HUMANN_HUMANN.out.pathways.collect {it[1]}
-    ch_genes_humann = HUMANN_HUMANN.out.genes.collect {it[1]}
-
-    HUMANN_MERGETABLESPATH(
-        ch_pathways_humann
-    )
-    HUMANN_MERGETABLESGENE(
-        ch_genes_humann
-    )
+    ch_versions = ch_versions.mix(HUMANN.out.versions)
 
     //
     // Subworkflow: Collect software versions
@@ -232,9 +122,10 @@ workflow METAGENOMICSPIPELINE {
     ch_multiqc_files = Channel.empty()
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
+    ch_multiqc_files = ch_multiqc_files.mix(METAPHLAN.out.multiqc_metaphlan.collect())
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_UNPROCESSED.out.zip.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC_PROCESSED.out.zip.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(PREPROCESSING.out.fastqc1.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(PREPROCESSING.out.fastqc2.collect{it[1]}.ifEmpty([]))
 
     MULTIQC (
         ch_multiqc_files.collect(),

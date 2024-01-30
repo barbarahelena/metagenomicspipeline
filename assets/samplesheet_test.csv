@@ -1,0 +1,4 @@
+sample,fastq_1,fastq_2
+2612,https://raw.githubusercontent.com/nf-core/test-datasets/taxprofiler/data/fastq/ERX5474932_ERR5766176_1.fastq.gz,https://raw.githubusercontent.com/nf-core/test-datasets/taxprofiler/data/fastq/ERX5474932_ERR5766176_2.fastq.gz
+2612,https://raw.githubusercontent.com/nf-core/test-datasets/taxprofiler/data/fastq/ERX5474932_ERR5766176_B_1.fastq.gz,https://raw.githubusercontent.com/nf-core/test-datasets/taxprofiler/data/fastq/ERX5474932_ERR5766176_B_2.fastq.gz
+2613,https://raw.githubusercontent.com/nf-core/test-datasets/taxprofiler/data/fastq/ERX5474937_ERR5766181_1.fastq.gz,https://raw.githubusercontent.com/nf-core/test-datasets/taxprofiler/data/fastq/ERX5474937_ERR5766181_2.fastq.gz

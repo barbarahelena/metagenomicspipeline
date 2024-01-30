@@ -31,7 +31,7 @@ process HUMANN_MERGETABLESGENE {
 
     humann_split_stratified_table \\
         --input gene_families_cpm.txt \\
-        --output gene_families_stratified.txt
+        --output ./
     
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

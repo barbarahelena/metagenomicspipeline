@@ -31,7 +31,7 @@ process HUMANN_MERGETABLESPATH {
 
     humann_split_stratified_table \\
         --input pathway_abundance_cpm.txt \\
-        --output pathway_abundance_stratified.txt
+        --output ./
     
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

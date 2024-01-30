@@ -3,9 +3,7 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     nf-core/metagenomicspipeline
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Github : https://github.com/nf-core/metagenomicspipeline
-    Website: https://nf-co.re/metagenomicspipeline
-    Slack  : https://nfcore.slack.com/channels/metagenomicspipeline
+    Github : https://github.com/barbarahelena/metagenomicspipeline
 ----------------------------------------------------------------------------------------
 */
 
@@ -17,9 +15,6 @@ nextflow.enable.dsl = 2
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-// TODO nf-core: Remove this line if you don't need a FASTA file
-//   This is an example of how to use getGenomeAttribute() to fetch parameters
-//   from igenomes.config using `--genome`
 params.fasta = WorkflowMain.getGenomeAttribute(params, 'fasta')
 
 /*
@@ -52,13 +47,13 @@ WorkflowMain.initialise(workflow, params, log)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { METAGENOMICSPIPELINE } from './workflows/metagenomicspipeline'
+include { METAGEN       } from './workflows/metagenomicspipeline'
 
 //
 // WORKFLOW: Run main nf-core/metagenomicspipeline analysis pipeline
 //
-workflow NFCORE_METAGENOMICSPIPELINE {
-    METAGENOMICSPIPELINE ()
+workflow METAGENOMICSPIPELINE {
+    METAGEN ()
 }
 
 /*
@@ -72,7 +67,7 @@ workflow NFCORE_METAGENOMICSPIPELINE {
 // See: https://github.com/nf-core/rnaseq/issues/619
 //
 workflow {
-    NFCORE_METAGENOMICSPIPELINE ()
+    METAGENOMICSPIPELINE ()
 }
 
 /*
