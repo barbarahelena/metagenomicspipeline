@@ -8,7 +8,7 @@ process HUMANN_MERGETABLESGENE {
     output:
     path "gene_families.txt"                , emit: genes
     path "gene_families_cpm.txt"            , emit: genescpm
-    path "gene_families_stratified.txt"     , emit: genesstrata
+    path "gene_families_cpm_stratified.txt" , emit: genesstrata
     path "versions.yml"                     , emit: versions
 
     when:
