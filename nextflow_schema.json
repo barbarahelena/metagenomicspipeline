@@ -52,8 +52,7 @@
                     "type": "string",
                     "description": "Name of iGenomes reference.",
                     "fa_icon": "fas fa-book",
-                    "help_text": "If using a reference genome configured in the pipeline using iGenomes, use this parameter to give the ID for the reference. This is then used to build the full paths for all required reference genome files e.g. `--genome GRCh38`. \n\nSee the [nf-core website docs](https://nf-co.re/usage/reference_genomes) for more details.",
-                    "default": "GRCh38"
+                    "help_text": "If using a reference genome configured in the pipeline using iGenomes, use this parameter to give the ID for the reference. This is then used to build the full paths for all required reference genome files e.g. `--genome GRCh38`. \n\nSee the [nf-core website docs](https://nf-co.re/usage/reference_genomes) for more details."
                 },
                 "fasta": {
                     "type": "string",
@@ -297,14 +296,6 @@
         "save_trimmed_fail": {
             "type": "boolean"
         },
-        "save_unaligned": {
-            "type": "boolean",
-            "default": true
-        },
-        "sort_bam": {
-            "type": "boolean",
-            "default": true
-        },
         "skip_preprocessing": {
             "type": "boolean"
         },
@@ -315,6 +306,16 @@
             "type": "boolean"
         },
         "skip_strainphlan": {
+            "type": "boolean",
+            "default": true
+        },
+        "skip_qualityfilter": {
+            "type": "boolean"
+        },
+        "skip_humanfilter": {
+            "type": "boolean"
+        },
+        "skip_subsampling": {
             "type": "boolean"
         }
     }
