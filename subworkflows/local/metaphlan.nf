@@ -40,8 +40,8 @@ workflow METAPHLAN {
     ch_versions = ch_versions.mix( METAPHLAN_MERGETABLES.out.versions )
 
     emit:
-    profiles = METAPHLAN_METAPHLAN.out.profile // channel [ meta, Metaphlan profile ]
-    multiqc_metaphlan = ch_multiqc_files       // channel: multiqc files
-    versions = ch_versions                     // channel: [ versions.yml ]
+    profiles = METAPHLAN_METAPHLAN.out.profile  // channel [ meta, Metaphlan profile ]
+    mqc      = ch_multiqc_files                 // channel: multiqc files
+    versions = ch_versions                      // channel: [ versions.yml ]
 }
 
