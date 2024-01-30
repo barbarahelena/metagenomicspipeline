@@ -8,7 +8,7 @@ process HUMANN_MERGETABLESPATH {
     output:
     path "pathway_abundance.txt"               , emit: path
     path "pathway_abundance_cpm.txt"           , emit: pathcpm
-    path "pathway_abundance_stratified.txt"    , emit: pathstrata
+    path "pathway_abundance_cpm_stratified.txt", emit: pathstrata
     path "versions.yml"                        , emit: versions
 
     when:
