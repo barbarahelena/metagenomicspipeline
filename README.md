@@ -1,5 +1,6 @@
 # Metagenomics pipeline using MetaPhlAn, HUMAnN and StrainPhlAn
 
+This pipeline is a work in progress. I plan to implement StrainPhlAn, and there are lots of other things on the wishlist, including implementation of the 'skip' parameters (to skip parts of the pipeline), parameters for the fastp quality filter, and parameters for database locations. The HUMAnN and MetaPhlAn databases are in the current version downloaded as part of the pipeline and stored in the db folder (the first time you use the pipeline, it therefore takes a bit longer).
 
 [![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A523.04.0-23aa62.svg)](https://www.nextflow.io/)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
@@ -8,20 +9,18 @@
 
 ## Introduction
 
-**nf-core/metagenomicspipeline** is a bioinformatics pipeline that ...
+**metagenomicspipeline** is a bioinformatics pipeline that processes shotgun metagenomics reads to obtain relative abundances, pathway abundances and strain-sharing using BioBakery software.
 
-<!-- TODO nf-core:
-   Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
-   major pipeline sections and the types of output it produces. You're giving an overview to someone new
-   to nf-core here, in 15-20 seconds. For an example, see https://github.com/nf-core/rnaseq/blob/master/README.md#introduction
--->
-
-<!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
-     workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
-<!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->
-
-1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
-2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
+1. Input check
+2. Preprocessing
+   - Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
+   - Bowtie2 to build an index and align reads with the human reference genome to filter out human reads.
+   - Samtools stats for read stats
+   - Subsampling reads
+   - Processed read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
+3. Metaphlan to obtain tax profiles from reads
+4. HUMAnN to get gene and pathway abundance tables
+5. Present a MultiQC report ([`MultiQC`](http://multiqc.info/))
 
 ## Usage
 
@@ -30,9 +29,6 @@ If you are new to Nextflow and nf-core, please refer to [this page](https://nf-c
 to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline)
 with `-profile test` before running the workflow on actual data.
 :::
-
-<!-- TODO nf-core: Describe the minimum required steps to execute the pipeline, e.g. how to prepare samplesheets.
-     Explain what rows and columns represent. For instance (please edit as appropriate):
 
 First, prepare a samplesheet with your input data that looks as follows:
 
@@ -43,13 +39,9 @@ sample,fastq_1,fastq_2
 CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
 ```
 
-Each row represents a fastq file (single-end) or a pair of fastq files (paired end).
-
--->
+Each row represents a pair of fastq files. This pipeline does not accept single-end data.
 
 Now, you can run the pipeline using:
-
-<!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
 
 ```bash
 nextflow run nf-core/metagenomicspipeline \
@@ -58,47 +50,49 @@ nextflow run nf-core/metagenomicspipeline \
    --outdir <OUTDIR>
 ```
 
-:::warning
-Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those
-provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_;
-see [docs](https://nf-co.re/usage/configuration#custom-configuration-files).
-:::
+Or run a test that uses the `samplesheet_test.csv` in the assets folder, using:
 
-For more details and further functionality, please refer to the [usage documentation](https://nf-co.re/metagenomicspipeline/usage) and the [parameter documentation](https://nf-co.re/metagenomicspipeline/parameters).
+```bash
+nextflow run nf-core/metagenomicspipeline \
+   -profile test,singularity \
+   --outdir <OUTDIR>
+```
+
+If you are working on an HPC, there might be specific rules on how many jobs the pipeline can submit in a specific timeframe. I wrote a separate instruction for use on HPCs in the [usage documentation](https://github.com/barbarahelena/metagenomicspipeline/blob/master/docs/output.md)
+
+For more details and further functionality, please refer to the [usage documentation](https://github.com/barbarahelena/metagenomicspipeline/blob/master/docs/output.md) and the [parameter documentation](https://github.com/barbarahelena/metagenomicspipeline/blob/master/docs/parameters.md).
 
 ## Pipeline output
 
-To see the results of an example test run with a full size dataset refer to the [results](https://nf-co.re/metagenomicspipeline/results) tab on the nf-core website pipeline page.
-For more details about the output files and reports, please refer to the
-[output documentation](https://nf-co.re/metagenomicspipeline/output).
+All output of the different parts of the pipeline are stored in subdirectories of the output directory. These directories are named after the tools that were used ('metaphlan', 'humann', etc.). Other important outputs are the multiqc report in the multiqc folder and the execution html report in the pipeline_info folder.
+
+For more details on the pipeline output, please refer to the [output documentation](https://github.com/barbarahelena/metagenomicspipeline/blob/master/docs/output.md).
 
 ## Credits
 
-nf-core/metagenomicspipeline was originally written by barbarahelena.
-
-We thank the following people for their extensive assistance in the development of this pipeline:
-
-<!-- TODO nf-core: If applicable, make list of people who have also contributed -->
+I used the nf-core template as much as possible and used the [taxprofiler](https://github.com/nf-core/taxprofiler/tree/1.1.3) nf-core pipeline and [Eduard's metagenomics pipeline](https://github.com/EvdVossen/Metagenomic_pipeline/tree/main) as examples.
 
 ## Contributions and Support
 
 If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
-
-For further information or help, don't hesitate to get in touch on the [Slack `#metagenomicspipeline` channel](https://nfcore.slack.com/channels/metagenomicspipeline) (you can join with [this invite](https://nf-co.re/join/slack)).
+For further information or help, don't hesitate to get in touch.
 
 ## Citations
 
-<!-- TODO nf-core: Add citation for pipeline after first release. Uncomment lines below and update Zenodo doi and badge at the top of this file. -->
-<!-- If you use  nf-core/metagenomicspipeline for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
+This pipeline uses bioBakery software, including MetaPhlAn and HUMAnN. Please cite their papers:
 
-<!-- TODO nf-core: Add bibliography of tools and data used in your pipeline -->
+> **Integrating taxonomic, functional, and strain-level profiling of diverse microbial communities with bioBakery**
+>
+> Francesco Beghini, Lauren J McIver, Aitor Blanco-Mìguez, Leonard Dubois, Francesco Asnicar, Sagun Maharjan, Ana Mailyan, Andrew Maltez Thomas,Paolo Manghi, Mireia Valles-Colomer, George Weingart, Yancong Zhang, Moreno Zolfo, Curtis Huttenhower, Eric A Franzosa, Nicola Segata
+>
+> _eLife_ 2021 10:e65088. doi: [10.7554/eLife.65088](https://doi.org/10.7554/eLife.65088).
+
+> **Extending and improving metagenomic taxonomic profiling with uncharacterized species using MetaPhlAn 4**
+>
+> Aitor Blanco-Miguez, Francesco Beghini, Fabio Cumbo, Lauren J. McIver, Kelsey N. Thompson, Moreno Zolfo, Paolo Manghi, Leonard Dubois, Kun D. Huang, Andrew Maltez Thomas, Gianmarco Piccinno, Elisa Piperni, Michal Punčochář, Mireia Valles-Colomer, Adrian Tett, Francesca Giordano, Richard Davies, Jonathan Wolf, Sarah E. Berry, Tim D. Spector, Eric A. Franzosa, Edoardo Pasolli, Francesco Asnicar, Curtis Huttenhower, Nicola Segata.
+>
+> _Nat Biotechnol._ 2023. doi: [10.1038/s41587-023-01688-w](https://doi.org/10.1038/s41587-023-01688-w).
+
+If you use  this metagenomicspipeline for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) - this link will follow after the first release.
 
 An extensive list of references for the tools used by the pipeline can be found in the [`CITATIONS.md`](CITATIONS.md) file.
-
-You can cite the `nf-core` publication as follows:
-
-> **The nf-core framework for community-curated bioinformatics pipelines.**
->
-> Philip Ewels, Alexander Peltzer, Sven Fillinger, Harshil Patel, Johannes Alneberg, Andreas Wilm, Maxime Ulysse Garcia, Paolo Di Tommaso & Sven Nahnsen.
->
-> _Nat Biotechnol._ 2020 Feb 13. doi: [10.1038/s41587-020-0439-x](https://dx.doi.org/10.1038/s41587-020-0439-x).
