@@ -27,6 +27,7 @@ workflow PREPROCESSING {
     main:
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
+    ch_proc_fastqc = Channel.empty()
 
     FASTQC_UNPROCESSED ( reads )
     ch_versions = ch_versions.mix(FASTQC_UNPROCESSED.out.versions.first())
@@ -47,7 +48,6 @@ workflow PREPROCESSING {
             ch_proc_fastqc = FASTQC_PROCESSED.out.zip
             ch_versions = ch_versions.mix(FASTQC_PROCESSED.out.versions.first())
         } else {
-            ch_proc_fastqc = Channel.empty()
             ch_reads = reads
         }
 
