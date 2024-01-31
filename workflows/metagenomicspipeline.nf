@@ -100,7 +100,14 @@ workflow METAGEN {
         // SUBWORKFLOW: StrainPhlan
         //
         if(params.skip_strainphlan == false){
-            STRAINPHLAN ( METAPHLAN.out.profiles )
+            STRAINPHLAN ( 
+                METAPHLAN.out.sambz,
+                METAPHLAN.out.database,
+                params.sample_with_n_markers,
+                params.marker_in_n_samples,
+                params.phylophlan_mode,
+                params.mutation_rates
+            )
             ch_versions = ch_versions.mix(STRAINPHLAN.out.versions)
         }
     } else{
