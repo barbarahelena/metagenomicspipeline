@@ -40,6 +40,8 @@ workflow METAPHLAN {
 
     emit:
     profiles = METAPHLAN_METAPHLAN.out.profile  // channel [ meta, Metaphlan profile ]
+    database = METAPHLAN_MAKEDB.out.db          // channel [ Metaphlan database ]
+    sambz    = METAPHLAN_METAPHLAN.out.sambz    // channel [ meta, Metaphlan sambz ]
     mqc      = ch_multiqc_files                 // channel: multiqc files
     versions = ch_versions                      // channel: [ versions.yml ]
 }
