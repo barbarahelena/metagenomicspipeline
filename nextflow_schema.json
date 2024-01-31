@@ -317,6 +317,22 @@
         },
         "skip_subsampling": {
             "type": "boolean"
+        },
+        "sample_with_n_markers": {
+            "type": "number",
+            "default": 80
+        },
+        "marker_in_n_samples": {
+            "type": "number",
+            "default": 80
+        },
+        "phylophlan_mode": {
+            "type": "string",
+            "default": "accurate"
+        },
+        "mutation_rates": {
+            "type": "boolean",
+            "default": true
         }
     }
 }
