@@ -29,14 +29,13 @@ workflow METAPHLAN {
         METAPHLAN_MAKEDB.out.db
     )
     ch_versions        = ch_versions.mix( METAPHLAN_METAPHLAN.out.versions.first() )
-
+    ch_multiqc_files = ch_multiqc_files.mix( METAPHLAN_METAPHLAN.out.profile )
     //
     // MODULE: Metaphlan merge tables
     //
     ch_profiles_metaphlan = METAPHLAN_METAPHLAN.out.profile.collect {it[1]}
 
     METAPHLAN_MERGETABLES ( ch_profiles_metaphlan )
-    ch_multiqc_files = ch_multiqc_files.mix( METAPHLAN_MERGETABLES.out.txt )
     ch_versions = ch_versions.mix( METAPHLAN_MERGETABLES.out.versions )
 
     emit:
