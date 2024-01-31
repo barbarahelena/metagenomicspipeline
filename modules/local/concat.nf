@@ -8,7 +8,7 @@ process CONCAT {
 
     output:
     tuple val(meta), path('*_concat.fastq.gz')            , emit: concats
-    tuple val(meta), path('*_{12}.out')                   , emit: log
+    tuple val(meta), path('*_concat.out')                   , emit: log
     path "versions.yml"                                   , emit: versions
 
     when:
@@ -24,7 +24,7 @@ process CONCAT {
 
     cat ${prefix}_1_subsampled.fastq.gz ${prefix}_2_subsampled.fastq.gz > ${prefix}_concat.fastq.gz
 
-    seqkit stats -b ${prefix}_concat.fastq.gz > ${prefix}_12.out
+    seqkit stats -b ${prefix}_concat.fastq.gz > ${prefix}_concat.out
         
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
