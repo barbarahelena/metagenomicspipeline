@@ -10,7 +10,7 @@ process BOWTIE2_ALIGN {
     output:
     tuple val(meta), path("*.{bam,sam}"), emit: aligned
     tuple val(meta), path("*.log")      , emit: log
-    tuple val(meta), path("*fastq.gz")  , emit: fastq, optional:true
+    tuple val(meta), path("*fastq.gz")  , emit: fastq
     path  "versions.yml"                , emit: versions
 
     when:
@@ -20,6 +20,7 @@ process BOWTIE2_ALIGN {
     def args = task.ext.args ?: ""
     def args2 = task.ext.args2 ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def reads_args = "-1 ${reads[0]} -2 ${reads[1]}"
     def extension_pattern = /(--output-fmt|-O)+\s+(\S+)/
     def extension = (args2 ==~ extension_pattern) ? (args2 =~ extension_pattern)[0][2].toLowerCase() : "bam"
 
@@ -30,19 +31,19 @@ process BOWTIE2_ALIGN {
 
     bowtie2 \\
         -x \$INDEX \\
-        -1 ${reads[0]} -2 ${reads[1]} \\
+        $reads_args \\
         --threads $task.cpus \\
-        --un-conc-gz ${prefix}_mapped.fastq.gz \\
+        --un-conc-gz ${prefix}.unmapped.fastq.gz \\
         $args \\
         2> >(tee ${prefix}.bowtie2.log >&2) \\
         | samtools sort $args2 --threads $task.cpus -o ${prefix}.${extension} -
 
     if [ -f ${prefix}.unmapped.fastq.1.gz ]; then
-        mv ${prefix}.unmapped.fastq.1.gz ${prefix}_unmapped_1.fastq.gz
+        mv ${prefix}.unmapped.fastq.1.gz ${prefix}.unmapped_1.fastq.gz
     fi
 
     if [ -f ${prefix}.unmapped.fastq.2.gz ]; then
-        mv ${prefix}.unmapped.fastq.2.gz ${prefix}_unmapped_2.fastq.gz
+        mv ${prefix}.unmapped.fastq.2.gz ${prefix}.unmapped_2.fastq.gz
     fi
 
     cat <<-END_VERSIONS > versions.yml
