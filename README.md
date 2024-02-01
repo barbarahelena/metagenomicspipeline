@@ -1,6 +1,6 @@
 # Metagenomics pipeline using MetaPhlAn, HUMAnN and StrainPhlAn
 
-This pipeline is a work in progress. I plan to implement StrainPhlAn, and there are lots of other things on the wishlist, including implementation of the 'skip' parameters (to skip parts of the pipeline), parameters for the fastp quality filter, and parameters for database locations. The HUMAnN and MetaPhlAn databases are in the current version downloaded as part of the pipeline and stored in the db folder (the first time you use the pipeline, it therefore takes a bit longer).
+ This pipeline can be used to obtain tax profiles, gene and pathway abundance tables and species-level genome bins from metagenomic reads. The input The MetaPhlAn and HUMAnN databases are in the current version downloaded as part of the pipeline and stored in the db folder (the first time you use the pipeline, it therefore takes a bit longer).
 
 [![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A523.04.0-23aa62.svg)](https://www.nextflow.io/)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
@@ -14,13 +14,16 @@ This pipeline is a work in progress. I plan to implement StrainPhlAn, and there 
 1. Input check
 2. Preprocessing
    - Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
-   - Bowtie2 to build an index and align reads with the human reference genome to filter out human reads.
-   - Samtools stats for read stats
-   - Subsampling reads
+   - Quality filtering and adapter trimming with [`fastp`](https://github.com/OpenGene/fastp)
+   - Human read filtering: [`Bowtie2`](https://bowtie-bio.sourceforge.net/bowtie2/index.shtml) to build an index and align reads with the human reference genome to filter out human reads and [`Samtools`](http://www.htslib.org/) stats for read stats
+   - Subsampling reads using [`seqtk`](https://github.com/lh3/seqtk) and stats before and after using [`seqkit`](https://bioinf.shenwei.me/seqkit/)
    - Processed read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
-3. Metaphlan to obtain tax profiles from reads
-4. HUMAnN to get gene and pathway abundance tables
+3. [`MetaPhlAn`](https://github.com/biobakery/MetaPhlAn/wiki/MetaPhlAn-4) to obtain tax profiles from reads
+4. [`HUMAnN`](https://github.com/biobakery/humann) to get gene and pathway abundance tables
+5. [`StrainPlAn`](https://github.com/biobakery/MetaPhlAn/wiki/StrainPhlAn-4) to get species-level genome bins (SGBs) and make a table of the number of SNPs between the sample strains and the reference genome based on the strain alignment - this subworkflow is under development. With the default parameters (`--skip-strainphlan true`), this part is currently skipped.
 5. Present a MultiQC report ([`MultiQC`](http://multiqc.info/))
+
+If you only want to use certain parts of the pipeline, you can use the flags `--skip-processing`, `--skip-metaphlan`, `--skip-humann` to skip certain subworkflows.
 
 ## Usage
 
