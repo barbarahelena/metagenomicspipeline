@@ -1,18 +1,23 @@
-# nf-core/metagenomicspipeline: Output
+# metagenomicspipeline: Output
 
 ## Introduction
 
-This document describes the output produced by the pipeline. Most of the plots are taken from the MultiQC report, which summarises results at the end of the pipeline.
-
-The directories listed below will be created in the results directory after the pipeline has finished. All paths are relative to the top-level results directory.
-
-<!-- TODO nf-core: Write this documentation describing your workflow's output -->
+This document describes the output produced by the pipeline. The directories listed below will be created in the results directory after the pipeline has finished. All paths are relative to the top-level results directory.
 
 ## Pipeline overview
 
 The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes data using the following steps:
 
+- [Inputcheck](#inputcheck) - Tidy samplesheet
 - [FastQC](#fastqc) - Raw read QC
+- [Fastp](#fastp) - Quality filter and adapter trimming reads
+- [Bowtie2](#bowtie2)
+- [Samtools](#samtools)
+- [Subsampling](#subsampling)
+- [FastQC](#fastqc) - Processed read QC
+- [MetaPhlAn](#metaphlan) - tax profiling
+- [HUMAnN](#humann) - gene and pathway abundance table
+- [StrainPhlAn](#strainphlan) - species-level genome bins (SGBs)
 - [MultiQC](#multiqc) - Aggregate report describing results and QC from the whole pipeline
 - [Pipeline information](#pipeline-information) - Report metrics generated during the workflow execution
 
@@ -38,6 +43,128 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
 :::note
 The FastQC plots displayed in the MultiQC report shows _untrimmed_ reads. They may contain adapter sequence and potentially regions with low quality.
 :::
+
+### Fastp
+
+<details markdown="1">
+<summary>Output files</summary>
+
+- `fastp/`
+  - `*.unmapped_1.fastq.gz`: unaligned forward reads
+  - `*.unmapped_2.fastq.gz`: unaligned reverse reads
+  - `*.fastp.html`: html with qc data
+  - `*.fastp.json`: json of metadata
+  - `*.fastp.log`: log of fastp process
+
+</details>
+
+[Fastp]() is a fast and efficient tool designed for preprocessing next-generation sequencing data. It performs quality filtering, adapter trimming, and other data cleaning tasks. Fastp is particularly useful for improving the quality of raw reads, ensuring that only high-quality data is used for subsequent analyses.
+
+### Bowtie2
+
+<details markdown="1">
+<summary>Output files</summary>
+
+- `bowtie2/`
+  - `bowtie2/`: folder with the indexed reference genome
+  - `*.bam`: reads that aligned with the reference genome
+  - `*.unmapped_1.fastq.gz`: unaligned forward reads
+  - `*.unmapped_2.fastq.gz`: unaligned reverse reads
+  - `*.bowtie2.log`: log of bowtie2 alignment
+
+</details>
+
+[Bowtie2](https://bowtie-bio.sourceforge.net/bowtie2/index.shtml) is employed to align reads with the human reference genome, filtering out human reads from the fastq files.
+
+### Samtools
+
+<details markdown="1">
+<summary>Output files</summary>
+
+- `samtools/`
+  - `*.bam.bai`: bam file of aligned reads with index
+  - `*.stats`: Samtools stats of the aligned reads
+
+</details>
+
+[Samtools](http://www.htslib.org/) is used to generate index files and obtain statistics on the aligned reads.
+
+### Subsampling
+
+<details markdown="1">
+<summary>Output files</summary>
+
+- `subsampling/`
+  - `*_subsampled_1.fastq.gz`: subsampled forward reads
+  - `*_subsampled_2.fastq.gz`: subsampled reverse reads
+  - `*_1.out`: stats of forward reads
+  - `*_2.out`: stats of reverse reads
+
+</details>
+
+[Seqtk](https://github.com/lh3/seqtk) is used for subsampling reads to the same sequencing depth, whereafter [seqkit](https://github.com/shenwei356/seqkit) is used to generate some statistics of the forward and reverse reads.
+
+# Concat
+
+<details markdown="1">
+<summary>Output files</summary>
+
+- `concat/`
+  - `*.concat.fastq.gz`: concatenated forward and reverse reads
+  - `*_concat.out`: stats of reads
+
+</details>
+
+In this module, `cat` is used to concatenate reads, and [seqkit](https://github.com/shenwei356/seqkit) stats was used for read statistics. These concatenated reads are used by HUMAnN.
+
+### MetaPhlAn
+
+<details markdown="1">
+<summary>Output files</summary>
+
+- `metaphlan/`
+  - `*_profile.txt`: tax profile per sample
+  - `*.biom`: biom file per sample
+  - `*.sam.bz2`: compressed sam file 
+  - `*.concat.fastq.gz`: concatenated forward and reverse reads
+  - `combined_table.txt`: merged metaphlan tax profile table
+
+</details>
+
+[MetaPhlAn](https://github.com/biobakery/MetaPhlAn) is a metagenomics tool that characterizes microbial communities by profiling the taxonomic composition of samples. It identifies microorganisms based on marker genes, providing insights into the abundance of different taxa. The output includes tax profiles and biom files for each sample. These are then merged into a combined table.
+
+### HUMAnN
+
+<details markdown="1">
+<summary>Output files</summary>
+
+- `humann/`
+  - `humann_results/`: output of HUMAnN per sample
+    - `*_genefamilies.tsv`: gene family abundance in reads per kilobase (RPK)
+    - `*_pathabundance.tsv`: pathway abundance
+    - `*_pathcoverage.tsv`: pathway coverage (presence / absence)
+  - `logs/`: logs of HUMAnN per sample
+  - `gene_families.txt`: gene families abundance (merged)
+  - `gene_families_cpm.txt`: gene families abundance (merged) in counts per million
+  - `gene_families_cpm_stratified.txt`: pathway abundance (merged) in cpm and stratified
+  - `pathway_abundance.txt`: pathway abundance (merged)
+  - `pathway_abundance_cpm.txt`: pathway abundance (merged) in counts per million
+  - `pathway_abundance_cpm_stratified.txt`: pathway abundance (merged) in cpm and stratified
+
+</details>
+
+[HUMAnN](https://github.com/biobakery/humann) is a tool for characterizing the functional potential of microbial communities. It quantifies gene and pathway abundance, allowing researchers to understand the metabolic capabilities of the microbiome. The output includes various files summarizing gene families and pathway abundance.
+
+### StrainPhlAn
+
+<details markdown="1">
+<summary>Output files</summary>
+
+- `strainphlan/`
+
+</details>
+
+[StrainPhlAn](https://github.com/biobakery/MetaPhlAn/wiki/StrainPhlAn-4) focuses on obtaining strain-level information from metagenomic data. It identifies species-level genome bins (SGBs), providing a more detailed view of microbial community composition.
 
 ### MultiQC
 
