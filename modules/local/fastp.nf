@@ -7,6 +7,10 @@ process FASTP {
     tuple val(meta), path(reads)
     path  adapter_fasta
     val   save_trimmed_fail
+    val   cutright
+    val   windowsize
+    val   meanquality
+    val   length
 
     output:
     tuple val(meta), path('*.fastp.fastq.gz') , optional:true, emit: reads
@@ -23,7 +27,8 @@ process FASTP {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def adapter_list = adapter_fasta ? "--adapter_fasta ${adapter_fasta}" : ""
-    def fail_fastq = save_trimmed_fail ? "--unpaired1 ${prefix}_1.fail.fastq.gz --unpaired2 ${prefix}_2.fail.fastq.gz" : ''
+    def fail_fastq = save_trimmed_fail ? "--unpaired1 ${prefix}_1.fail.fastq.gz --unpaired2 ${prefix}_2.fail.fastq.gz" : ""
+    def cutright = cutright ? "--cut_right" : ""
     // Added soft-links to original fastqs for consistent naming in MultiQC
     """
     [ ! -f  ${prefix}_1.fastq.gz ] && ln -sf ${reads[0]} ${prefix}_1.fastq.gz
@@ -39,6 +44,10 @@ process FASTP {
         $fail_fastq \\
         --thread $task.cpus \\
         --detect_adapter_for_pe \\
+        $cutright \\
+        --cut_window_size $windowsize \\
+        --cut_mean_quality $meanquality \\
+        --length_required $length \\
         $args \\
         2> >(tee ${prefix}.fastp.log >&2)
 

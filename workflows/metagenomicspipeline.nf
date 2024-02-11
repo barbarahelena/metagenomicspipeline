@@ -63,7 +63,8 @@ def multiqc_report = []
 
 workflow METAGEN {
     ch_adapterlist = params.adapterlist ? file(params.adapterlist) : []
-    ch_reference = params.genome ? file(params.genome) : file(params.altgenome)
+    ch_reference = params.fasta ? file(params.fasta) : []
+    ch_bowtie2_index = params.bowtie2 ? params.bowtie2 : []
     ch_versions = Channel.empty()
 
     //
@@ -78,8 +79,13 @@ workflow METAGEN {
     PREPROCESSING (
         INPUT_CHECK.out.reads,
         ch_reference,
+        ch_bowtie2_index,
         ch_adapterlist,
         params.save_trimmed_fail,
+        params.fastp_cutright,
+        params.fastp_windowsize,
+        params.fastp_meanquality,
+        params.fastp_length,
         params.skip_preprocessing,
         params.skip_qualityfilter,
         params.skip_humanfilter,

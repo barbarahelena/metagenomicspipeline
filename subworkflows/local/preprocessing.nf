@@ -16,8 +16,13 @@ workflow PREPROCESSING {
     take:
     reads
     reference
+    bowtie2index
     adapters
     savetrimmed
+    cutright
+    windowsize
+    meanquality
+    length
     skip_preprocessing
     skip_qualityfilter
     skip_humanfilter
@@ -33,12 +38,16 @@ workflow PREPROCESSING {
     ch_versions = ch_versions.mix(FASTQC_UNPROCESSED.out.versions.first())
     
     if(skip_preprocessing == false) {
-        if(skip_humanfilter == false){
+        if(skip_qualityfilter == false){
             // Quality filtering, adapter trimming
             FASTP (
                 reads, 
                 adapters,
-                savetrimmed
+                savetrimmed,
+                cutright,
+                windowsize, 
+                meanquality, 
+                length
             )
             ch_versions = ch_versions.mix( FASTP.out.versions.first() )
             ch_multiqc_files = ch_multiqc_files.mix( FASTP.out.json )
@@ -52,15 +61,18 @@ workflow PREPROCESSING {
         }
 
         if(skip_humanfilter == false){
-            // Build index of reference genome
-            BOWTIE2_BUILD ( reference )
-            ch_bowtie2_index = BOWTIE2_BUILD.out.index
-            ch_versions      = ch_versions.mix( BOWTIE2_BUILD.out.versions )
-
+            if(bowtie2index == false){
+                // Build index of reference genome
+                BOWTIE2_BUILD ( reference )
+                ch_bowtie2_index = BOWTIE2_BUILD.out.index
+                ch_versions      = ch_versions.mix( BOWTIE2_BUILD.out.versions )
+            } else{
+                ch_bowtie2_index = bowtie2index
+            }
             // Map, generate BAM with all reads and unmapped reads in fastq.gz for downstream
             BOWTIE2_ALIGN ( 
                 ch_reads, 
-                BOWTIE2_BUILD.out.index
+                ch_bowtie2_index
             )
             ch_versions      = ch_versions.mix( BOWTIE2_ALIGN.out.versions.first() )
             ch_multiqc_files = ch_multiqc_files.mix( BOWTIE2_ALIGN.out.log )

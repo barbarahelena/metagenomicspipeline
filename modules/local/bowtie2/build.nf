@@ -8,8 +8,8 @@ process BOWTIE2_BUILD {
     path(fasta)
 
     output:
-    path('bowtie2')                     , emit: index
-    path "versions.yml"                 , emit: versions
+    path "bowtie2/${fasta.baseName}.*.bt2"  , emit: index
+    path "versions.yml"                     , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
