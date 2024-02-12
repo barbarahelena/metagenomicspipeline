@@ -12,9 +12,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
 - [FastQC](#fastqc) - Raw read QC
 - [Fastp](#fastp) - Quality filter and adapter trimming reads
 - [Bowtie2](#bowtie2)
-- [Samtools](#samtools)
 - [Subsampling](#subsampling)
-- [FastQC](#fastqc) - Processed read QC
 - [MetaPhlAn](#metaphlan) - tax profiling
 - [HUMAnN](#humann) - gene and pathway abundance table
 - [StrainPhlAn](#strainphlan) - species-level genome bins (SGBs)
@@ -67,27 +65,14 @@ The FastQC plots displayed in the MultiQC report shows _untrimmed_ reads. They m
 
 - `bowtie2/`
   - `bowtie2/`: folder with the indexed reference genome
-  - `*.bam`: reads that aligned with the reference genome
   - `*.unmapped_1.fastq.gz`: unaligned forward reads
   - `*.unmapped_2.fastq.gz`: unaligned reverse reads
   - `*.bowtie2.log`: log of bowtie2 alignment
+  - `*.stats`: samtools stats report
 
 </details>
 
-[Bowtie2](https://bowtie-bio.sourceforge.net/bowtie2/index.shtml) is employed to align reads with the human reference genome, filtering out human reads from the fastq files.
-
-### Samtools
-
-<details markdown="1">
-<summary>Output files</summary>
-
-- `samtools/`
-  - `*.bam.bai`: bam file of aligned reads with index
-  - `*.stats`: Samtools stats of the aligned reads
-
-</details>
-
-[Samtools](http://www.htslib.org/) is used to generate index files and obtain statistics on the aligned reads.
+[Bowtie2](https://bowtie-bio.sourceforge.net/bowtie2/index.shtml) is employed to align reads with the human reference genome, filtering out human reads from the fastq files. [Samtools](http://www.htslib.org/) is used to generate index files and obtain statistics.
 
 ### Subsampling
 
@@ -97,25 +82,11 @@ The FastQC plots displayed in the MultiQC report shows _untrimmed_ reads. They m
 - `subsampling/`
   - `*_subsampled_1.fastq.gz`: subsampled forward reads
   - `*_subsampled_2.fastq.gz`: subsampled reverse reads
-  - `*_1.out`: stats of forward reads
-  - `*_2.out`: stats of reverse reads
+  - `*_readcount.txt`: number of reads before subsampling (forward reads)
 
 </details>
 
-[Seqtk](https://github.com/lh3/seqtk) is used for subsampling reads to the same sequencing depth, whereafter [seqkit](https://github.com/shenwei356/seqkit) is used to generate some statistics of the forward and reverse reads.
-
-# Concat
-
-<details markdown="1">
-<summary>Output files</summary>
-
-- `concat/`
-  - `*.concat.fastq.gz`: concatenated forward and reverse reads
-  - `*_concat.out`: stats of reads
-
-</details>
-
-In this module, `cat` is used to concatenate reads, and [seqkit](https://github.com/shenwei356/seqkit) stats was used for read statistics. These concatenated reads are used by HUMAnN.
+[Seqkit](https://bioinf.shenwei.me/seqkit/) is used for subsampling reads that have more reads than the subsampling level. Reads lower than the subsampling level are simply copied without subsampling.
 
 ### MetaPhlAn
 

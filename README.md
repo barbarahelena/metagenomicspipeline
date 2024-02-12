@@ -16,8 +16,7 @@
    - Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
    - Quality filtering and adapter trimming with [`fastp`](https://github.com/OpenGene/fastp)
    - Human read filtering: [`Bowtie2`](https://bowtie-bio.sourceforge.net/bowtie2/index.shtml) to build an index and align reads with the human reference genome to filter out human reads and [`Samtools`](http://www.htslib.org/) stats for read stats
-   - Subsampling reads using [`seqtk`](https://github.com/lh3/seqtk) and stats before and after using [`seqkit`](https://bioinf.shenwei.me/seqkit/)
-   - Processed read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
+   - Subsampling reads using [`seqkit`](https://bioinf.shenwei.me/seqkit/)
 3. [`MetaPhlAn`](https://github.com/biobakery/MetaPhlAn/wiki/MetaPhlAn-4) to obtain tax profiles from reads
 4. [`HUMAnN`](https://github.com/biobakery/humann) to get gene and pathway abundance tables
 5. [`StrainPlAn`](https://github.com/biobakery/MetaPhlAn/wiki/StrainPhlAn-4) to get species-level genome bins (SGBs) and make a table of the number of SNPs between the sample strains and the reference genome based on the strain alignment - this subworkflow is under development. With the default parameters (`--skip-strainphlan true`), this part is currently skipped.
