@@ -100,8 +100,8 @@ workflow METAGEN {
     if(params.skip_metaphlan == false){
         METAPHLAN ( PREPROCESSING.out.reads )
         ch_versions = ch_versions.mix(METAPHLAN.out.versions)
-        ch_humann_input = PREPROCESSING.out.concats.join(METAPHLAN.out.profiles).groupTuple()
-
+        ch_humann_input = PREPROCESSING.out.reads.join(METAPHLAN.out.profiles).groupTuple()
+        ch_humann_input.view()
         //
         // SUBWORKFLOW: StrainPhlan
         //
@@ -117,7 +117,7 @@ workflow METAGEN {
             ch_versions = ch_versions.mix(STRAINPHLAN.out.versions)
         }
     } else{
-        ch_humann_input = PREPROCESSING.out.concats.join(params.skip_metaphlan).groupTuple()
+        ch_humann_input = PREPROCESSING.out.reads.join(params.skip_metaphlan).groupTuple()
     }
     //
     // SUBWORKFLOW: HUMAnN
@@ -148,7 +148,7 @@ workflow METAGEN {
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
     ch_multiqc_files = ch_multiqc_files.mix(PREPROCESSING.out.fastqc1.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(PREPROCESSING.out.fastqc2.collect{it[1]}.ifEmpty([]))
+    // ch_multiqc_files = ch_multiqc_files.mix(PREPROCESSING.out.fastqc2.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(PREPROCESSING.out.mqc.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(METAPHLAN.out.mqc.collect{it[1]}.ifEmpty([]))
 

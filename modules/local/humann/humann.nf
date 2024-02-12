@@ -2,9 +2,10 @@ process HUMANN_HUMANN {
     tag "$meta.id"
     label 'process_medium'
     label 'humann'
+    publishDir 'humann/', mode: 'copy'
 
     input:
-    tuple val(meta), path(input), path(taxprofile)
+    tuple val(meta), path(reads), path(taxprofile)
     path humann_db
 
     output:
@@ -20,15 +21,18 @@ process HUMANN_HUMANN {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def input_type = "$input" =~ /.*\.(fastq.gz)$/ ? "fastq.gz" : "$input" =~ /.*\.(fastq|fq)$/ ? "fastq" : "$input" =~ /.*\.(fasta|fna|fa)/ ? "fasta" : "sam"
     def profile = "$taxprofile" == true ? "" : "--taxonomic-profile $taxprofile"
 
     """
     mkdir humann_results
-    mkdir logs   
+    mkdir logs
+    echo $reads
+    echo ${reads}
+    cat ${reads[0]} ${reads[1]} > ${prefix}_concat.fastq.gz
+
     humann \\
-        --input $input \\
-        --input-format $input_type \\
+        --input ${prefix}_concat.fastq.gz \\
+        --input-format "fastq.gz" \\
         --output humann_results/ \\
         --output-basename ${prefix} \\
         --o-log logs/${prefix}.log \\
@@ -40,8 +44,7 @@ process HUMANN_HUMANN {
         --nucleotide-database $humann_db/chocophlan \\
         $args \\
         --verbose
-        
-
+    rm ${prefix}_concat.fastq.gz
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
