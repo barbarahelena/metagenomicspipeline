@@ -2,6 +2,7 @@ process METAPHLAN_METAPHLAN {
     tag "$meta.id"
     label 'process_medium'
     label 'metaphlan'
+    publishDir 'metaphlan/', mode: 'copy'
 
     input:
     tuple val(meta), path(input)

@@ -1,6 +1,7 @@
 process HUMANN_MERGETABLESPATH {
     label 'process_single'
     label 'humann'
+    publishDir 'humann/', mode: 'copy'
 
     input:
     path(paths)
