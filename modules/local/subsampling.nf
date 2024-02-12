@@ -1,7 +1,6 @@
 process SUBSAMPLING {
     tag "$meta.id"
-    label 'process_medium'
-    label 'seqtk'
+    label 'seqkit'
     
     input:
     tuple val(meta), path(reads)
@@ -9,7 +8,7 @@ process SUBSAMPLING {
 
     output:
     tuple val(meta), path('*_{1,2}_subsampled.fastq.gz')  , emit: reads
-    tuple val(meta), path('*_{1,2}.out')                  , emit: log
+    tuple val(meta), path('*_readcount.txt')              , emit: log
     path "versions.yml"                                   , emit: versions
 
     when:
@@ -21,18 +20,33 @@ process SUBSAMPLING {
     def subsample_n = subsamplelevel ? subsamplelevel : 20000000
    
     """
-    [ ! -f  ${prefix}_1.fastq.gz ] && ln -sf ${reads[0]} ${prefix}_1.fastq.gz
-    [ ! -f  ${prefix}_2.fastq.gz ] && ln -sf ${reads[1]} ${prefix}_2.fastq.gz
+    echo "Calculating stats of unprocessed reads"
+    noreads=\$(zcat ${reads[0]} | awk '{s++}END{print s/4}')
+    echo "Reads in ${reads[0]}: \$noreads" > "${prefix}_readcount.txt"
+    
+    echo "Sample has \$noreads reads"
+    echo "Calculating proportion: subsampling threshold ${subsample_n}"
+    proportion=\$(awk -v num_reads=\$noreads -v subn=${subsample_n} 'BEGIN { printf "%.2f", subn / num_reads + 0.01 }')
+    echo "The proportion is \$proportion"
 
-    seqtk sample -s1234 ${prefix}_1.fastq.gz $subsample_n | gzip >  ${prefix}_1_subsampled.fastq.gz
-    seqtk sample -s1234 ${prefix}_2.fastq.gz $subsample_n | gzip >  ${prefix}_2_subsampled.fastq.gz
+    if (( \$(awk 'BEGIN {print ("'\$proportion'" < 1)}') )); then   
+        echo "Downsampling forward reads"
+        zcat ${reads[0]} | seqkit sample -s 42 -p \$proportion -o ${prefix}_sample.fastq
+        seqkit head ${prefix}_sample.fastq -n ${subsample_n} -o ${prefix}_1_subsampled.fastq.gz
+        rm ${prefix}_sample.fastq
 
-    seqkit stats -b ${prefix}_1.fastq.gz > ${prefix}_1.out
-    seqkit stats -b ${prefix}_2.fastq.gz > ${prefix}_2.out
-        
+        echo "Downsampling reverse reads"
+        zcat ${reads[1]} | seqkit sample -s 42 -p \$proportion -o ${prefix}_sample.fastq
+        seqkit head ${prefix}_sample.fastq -n ${subsample_n} -o ${prefix}_2_subsampled.fastq.gz
+        rm ${prefix}_sample.fastq
+    else
+        echo "Sample has less than ${subsample_n} reads, skipping subsampling"
+        cp ${reads[0]} ${prefix}_1_subsampled.fastq.gz
+        cp ${reads[1]} ${prefix}_2_subsampled.fastq.gz
+    fi
+    echo "Done"
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        seqtk: \$(echo \$(seqtk 2>&1) | sed 's/^.*Version: //; s/ .*\$//')
         seqkit: \$( seqkit version | sed 's/seqkit v//' )
     END_VERSIONS
     """
@@ -42,7 +56,6 @@ process SUBSAMPLING {
     """
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        seqtk: \$(echo \$(seqtk 2>&1) | sed 's/^.*Version: //; s/ .*\$//')
         seqkit: \$( seqkit version | sed 's/seqkit v//' )
     END_VERSIONS
     """
