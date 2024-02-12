@@ -1,4 +1,4 @@
-process BOWTIE2_ALIGN {
+process BOWTIE2_FILTERHUMAN {
     tag "$meta.id"
     label "process_high"
     label 'bowtie2'
@@ -8,21 +8,18 @@ process BOWTIE2_ALIGN {
     path(index)
 
     output:
-    tuple val(meta), path("*.{bam,sam}"), emit: aligned
-    tuple val(meta), path("*.log")      , emit: log
-    tuple val(meta), path("*fastq.gz")  , emit: fastq
-    path  "versions.yml"                , emit: versions
+    tuple val(meta), path("*_unmapped_{1,2}.fastq.gz")  , emit: reads
+    tuple val(meta), path("*.log")                      , emit: log
+    tuple val(meta), path("*.stats")                    , emit: stats
+    path  "versions.yml"                                , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ""
-    def args2 = task.ext.args2 ?: ""
     def prefix = task.ext.prefix ?: "${meta.id}"
     def reads_args = "-1 ${reads[0]} -2 ${reads[1]}"
-    def extension_pattern = /(--output-fmt|-O)+\s+(\S+)/
-    def extension = (args2 ==~ extension_pattern) ? (args2 =~ extension_pattern)[0][2].toLowerCase() : "bam"
 
     """
     INDEX=`find -L ./ -name "*.rev.1.bt2" | sed "s/\\.rev.1.bt2\$//"`
@@ -33,17 +30,31 @@ process BOWTIE2_ALIGN {
         -x \$INDEX \\
         $reads_args \\
         --threads $task.cpus \\
-        --un-conc-gz ${prefix}.unmapped.fastq.gz \\
+        --un-conc-gz ${prefix}_unmapped.fastq.gz \\
         $args \\
         2> >(tee ${prefix}.bowtie2.log >&2) \\
-        | samtools sort $args2 --threads $task.cpus -o ${prefix}.${extension} -
+        | samtools sort --threads $task.cpus -o ${prefix}.bam -
+    
+    samtools \\
+        index ${prefix}.bam \\
+        --threads $task.cpus-1 \\
+        -o ${prefix}.bai
 
-    if [ -f ${prefix}.unmapped.fastq.1.gz ]; then
-        mv ${prefix}.unmapped.fastq.1.gz ${prefix}.unmapped_1.fastq.gz
+    samtools \\
+        stats \\
+        ${prefix}.bam \\
+        --threads $task.cpus \\
+        > ${prefix}.stats
+    
+    rm ${prefix}.bai
+    rm ${prefix}.bam
+
+    if [ -f ${prefix}_unmapped.fastq.1.gz ]; then
+        mv ${prefix}_unmapped.fastq.1.gz ${prefix}_unmapped_1.fastq.gz
     fi
 
-    if [ -f ${prefix}.unmapped.fastq.2.gz ]; then
-        mv ${prefix}.unmapped.fastq.2.gz ${prefix}.unmapped_2.fastq.gz
+    if [ -f ${prefix}_unmapped.fastq.2.gz ]; then
+        mv ${prefix}_unmapped.fastq.2.gz ${prefix}_unmapped_2.fastq.gz
     fi
 
     cat <<-END_VERSIONS > versions.yml
@@ -64,7 +75,8 @@ process BOWTIE2_ALIGN {
     """
     touch ${prefix}.${extension}
     touch ${prefix}.bowtie2.log
-    ${create_unmapped}
+    touch ${prefix}.bam
+    touch ${prefix}.stats    
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
