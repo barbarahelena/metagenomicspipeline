@@ -11,6 +11,7 @@ workflow HUMANN {
 
     take:
     reads
+    database
 
     main:
     ch_versions = Channel.empty()
@@ -18,14 +19,15 @@ workflow HUMANN {
     //
     // MODULE: HUMANN get database
     //
-    HUMANN_MAKEDB ( )
+    HUMANN_MAKEDB ( database )
 
     //
     // MODULE: HUMANN
     //
     HUMANN_HUMANN(
         reads,
-        HUMANN_MAKEDB.out.db
+        HUMANN_MAKEDB.out.db,
+        database
     )
     ch_versions = ch_versions.mix( HUMANN_HUMANN.out.versions.first() ) // only once since all use same container/conda
 

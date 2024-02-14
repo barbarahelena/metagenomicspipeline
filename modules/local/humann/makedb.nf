@@ -3,6 +3,9 @@ process HUMANN_MAKEDB {
     label 'humann'
     storeDir 'db'
 
+    input:
+    val database
+
     output:
     path "humann_db"            , emit: db
 
@@ -11,14 +14,17 @@ process HUMANN_MAKEDB {
 
     script:
     def args = task.ext.args ?: ''
-
+    def unirefdatabase = database ? database : "uniref90_ec_filtered_diamond"
+    def folder = unirefdatabase == "uniref90_ec_filtered_diamond" ? "uniref_filt" : unirefdatabase == "uniref90_diamond" ? "uniref" : "otherdb" 
     """
+    mkdir humann_db
+
     humann_databases \\
         --download chocophlan full humann_db \\
         --update-config no
         
     humann_databases \\
-        --download uniref uniref90_diamond humann_db \\
+        --download uniref $unirefdatabase humann_db/$folder \\
         --update-config no
     """
 }

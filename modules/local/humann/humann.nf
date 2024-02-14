@@ -1,12 +1,14 @@
 process HUMANN_HUMANN {
     tag "$meta.id"
     label 'process_medium'
+    label 'process_long'
     label 'humann'
     publishDir 'humann/', mode: 'copy'
 
     input:
     tuple val(meta), path(reads), path(taxprofile)
     path humann_db
+    val database
 
     output:
     tuple val(meta), path("humann_results/*_pathabundance.tsv")  ,                emit: pathways
@@ -22,12 +24,12 @@ process HUMANN_HUMANN {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def profile = "$taxprofile" == true ? "" : "--taxonomic-profile $taxprofile"
+    def unirefdatabase = database ? database : "uniref90_ec_filtered_diamond"
+    def folder = unirefdatabase == "uniref90_ec_filtered_diamond" ? "uniref_filt" : unirefdatabase == "uniref90_diamond" ? "uniref" : "otherdb" 
 
     """
     mkdir humann_results
     mkdir logs
-    echo $reads
-    echo ${reads}
     cat ${reads[0]} ${reads[1]} > ${prefix}_concat.fastq.gz
 
     humann \\
@@ -40,10 +42,11 @@ process HUMANN_HUMANN {
         --threads $task.cpus \\
         --memory-use maximum \\
         --search-mode uniref90 \\
-        --protein-database $humann_db/uniref \\
+        --protein-database $humann_db/$folder/uniref \\
         --nucleotide-database $humann_db/chocophlan \\
         $args \\
         --verbose
+        
     rm ${prefix}_concat.fastq.gz
 
     cat <<-END_VERSIONS > versions.yml

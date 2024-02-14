@@ -64,6 +64,7 @@ def multiqc_report = []
 workflow METAGEN {
     ch_adapterlist = params.adapterlist ? file(params.adapterlist) : []
     ch_reference = params.fasta ? file(params.fasta) : []
+    ch_database = params.database ? params.database : []
     ch_bowtie2_index = params.bowtie2 ? params.bowtie2 : []
     ch_versions = Channel.empty()
 
@@ -100,8 +101,10 @@ workflow METAGEN {
     if(params.skip_metaphlan == false){
         METAPHLAN ( PREPROCESSING.out.reads )
         ch_versions = ch_versions.mix(METAPHLAN.out.versions)
-        ch_humann_input = PREPROCESSING.out.reads.join(METAPHLAN.out.profiles).groupTuple()
-        ch_humann_input.view()
+        ch_humann_input = PREPROCESSING.out.reads
+            .join(METAPHLAN.out.profiles)
+            .groupTuple()
+            .map { id, paths, profile ->  [id, paths.flatten(), profile[0]] }
         //
         // SUBWORKFLOW: StrainPhlan
         //
@@ -123,7 +126,7 @@ workflow METAGEN {
     // SUBWORKFLOW: HUMAnN
     //
     if(params.skip_humann == false) {
-        HUMANN ( ch_humann_input )
+        HUMANN ( ch_humann_input, ch_database )
         ch_versions = ch_versions.mix(HUMANN.out.versions)
     }
 
