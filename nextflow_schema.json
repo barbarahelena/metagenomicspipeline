@@ -23,13 +23,13 @@
                     "pattern": "^\\S+\\.csv$",
                     "description": "Path to comma-separated file containing information about the samples in the experiment.",
                     "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row. See [usage docs](https://nf-co.re/metagenomicspipeline/usage#samplesheet-input).",
-                    "fa_icon": "fas fa-file-csv"
+                    "fa_icon": "fas fa-vials"
                 },
                 "outdir": {
                     "type": "string",
                     "format": "directory-path",
                     "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
-                    "fa_icon": "fas fa-folder-open"
+                    "fa_icon": "fas fa-folder"
                 },
                 "email": {
                     "type": "string",
@@ -43,12 +43,13 @@
                     "description": "MultiQC report title. Printed as page header, used for filename if not otherwise specified.",
                     "fa_icon": "fas fa-file-signature"
                 }
-            }
+            },
+            "help_text": ""
         },
         "reference_genome_options": {
             "title": "Reference genome options",
             "type": "object",
-            "fa_icon": "fas fa-dna",
+            "fa_icon": "fas fa-asterisk",
             "description": "Reference genome related files and options required for the workflow.",
             "properties": {
                 "igenomes_ignore": {
@@ -57,96 +58,147 @@
                     "fa_icon": "fas fa-ban",
                     "hidden": true,
                     "help_text": "Do not load `igenomes.config` when running the pipeline. You may choose this option if you observe clashes between custom parameters and those supplied in `igenomes.config`."
+                },
+                "fasta": {
+                    "type": "string",
+                    "fa_icon": "fas fa-file-alt"
+                },
+                "adapterlist": {
+                    "type": "string",
+                    "fa_icon": "fas fa-forward"
                 }
             }
         },
-        "institutional_config_options": {
-            "title": "Institutional config options",
+        "skip_options": {
+            "title": "Skip options",
             "type": "object",
-            "fa_icon": "fas fa-university",
-            "description": "Parameters used to describe centralised config profiles. These should not be edited.",
-            "help_text": "The centralised nf-core configuration profiles use a handful of pipeline parameters to describe themselves. This information is then printed to the Nextflow log when you run a pipeline. You should not need to change these values when you run a pipeline.",
+            "description": "",
+            "default": "",
             "properties": {
-                "custom_config_version": {
-                    "type": "string",
-                    "description": "Git commit id for Institutional configs.",
-                    "default": "master",
-                    "hidden": true,
-                    "fa_icon": "fas fa-users-cog"
+                "skip_preprocessing": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward"
                 },
-                "custom_config_base": {
-                    "type": "string",
-                    "description": "Base directory for Institutional configs.",
-                    "default": "https://raw.githubusercontent.com/nf-core/configs/master",
-                    "hidden": true,
-                    "help_text": "If you're running offline, Nextflow will not be able to fetch the institutional config files from the internet. If you don't need them, then this is not a problem. If you do need them, you should download the files from the repo and tell Nextflow where to find them with this parameter.",
-                    "fa_icon": "fas fa-users-cog"
+                "skip_qualityfilter": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward"
                 },
-                "config_profile_name": {
-                    "type": "string",
-                    "description": "Institutional config name.",
-                    "hidden": true,
-                    "fa_icon": "fas fa-users-cog"
+                "skip_humanfilter": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward"
                 },
-                "config_profile_description": {
-                    "type": "string",
-                    "description": "Institutional config description.",
-                    "hidden": true,
-                    "fa_icon": "fas fa-users-cog"
+                "skip_subsampling": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward"
                 },
-                "config_profile_contact": {
-                    "type": "string",
-                    "description": "Institutional config contact information.",
-                    "hidden": true,
-                    "fa_icon": "fas fa-users-cog"
+                "skip_metaphlan": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward"
                 },
-                "config_profile_url": {
-                    "type": "string",
-                    "description": "Institutional config URL link.",
-                    "hidden": true,
-                    "fa_icon": "fas fa-users-cog"
+                "skip_humann": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward"
+                },
+                "skip_strainphlan": {
+                    "type": "boolean",
+                    "default": true,
+                    "fa_icon": "fas fa-forward"
                 }
-            }
+            },
+            "fa_icon": "fas fa-forward"
         },
-        "max_job_request_options": {
-            "title": "Max job request options",
+        "preprocessing_of_reads": {
+            "title": "Preprocessing of reads",
             "type": "object",
-            "fa_icon": "fab fa-acquisitions-incorporated",
-            "description": "Set the top limit for requested resources for any single job.",
-            "help_text": "If you are running on a smaller system, a pipeline step requesting more resources than are available may cause the Nextflow to stop the run with an error. These options allow you to cap the maximum resources requested by any single job so that the pipeline will run on your system.\n\nNote that you can not _increase_ the resources requested by any job using these options. For that you will need your own configuration file. See [the nf-core website](https://nf-co.re/usage/configuration) for details.",
+            "description": "",
+            "default": "",
             "properties": {
-                "max_cpus": {
+                "save_trimmed_fail": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward"
+                },
+                "fastp_cutright": {
+                    "type": "boolean",
+                    "default": true,
+                    "fa_icon": "fas fa-cut"
+                },
+                "fastp_windowsize": {
                     "type": "integer",
-                    "description": "Maximum number of CPUs that can be requested for any single job.",
-                    "default": 16,
-                    "fa_icon": "fas fa-microchip",
-                    "hidden": true,
-                    "help_text": "Use to set an upper-limit for the CPU requirement for each process. Should be an integer e.g. `--max_cpus 1`"
+                    "default": 4,
+                    "fa_icon": "far fa-window-maximize"
                 },
-                "max_memory": {
-                    "type": "string",
-                    "description": "Maximum amount of memory that can be requested for any single job.",
-                    "default": "128.GB",
-                    "fa_icon": "fas fa-memory",
-                    "pattern": "^\\d+(\\.\\d+)?\\.?\\s*(K|M|G|T)?B$",
-                    "hidden": true,
-                    "help_text": "Use to set an upper-limit for the memory requirement for each process. Should be a string in the format integer-unit e.g. `--max_memory '8.GB'`"
+                "fastp_meanquality": {
+                    "type": "integer",
+                    "default": 15,
+                    "fa_icon": "fas fa-sort-numeric-up"
                 },
-                "max_time": {
-                    "type": "string",
-                    "description": "Maximum amount of time that can be requested for any single job.",
-                    "default": "240.h",
-                    "fa_icon": "far fa-clock",
-                    "pattern": "^(\\d+\\.?\\s*(s|m|h|d|day)\\s*)+$",
-                    "hidden": true,
-                    "help_text": "Use to set an upper-limit for the time requirement for each process. Should be a string in the format integer-unit e.g. `--max_time '2.h'`"
+                "fastp_length": {
+                    "type": "integer",
+                    "default": 70,
+                    "fa_icon": "fas fa-ruler"
+                },
+                "subsamplelevel": {
+                    "type": "number",
+                    "default": 20000000,
+                    "fa_icon": "fas fa-forward"
                 }
-            }
+            },
+            "fa_icon": "fas fa-cogs"
+        },
+        "humann": {
+            "title": "HUMAnN",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "database": {
+                    "type": "string",
+                    "fa_icon": "fas fa-database",
+                    "description": "Which uniref database to use",
+                    "enum": [
+                        "uniref90_diamond",
+                        "uniref90_ec_filtered_diamond",
+                        "uniref50_diamond",
+                        "uniref50_ec_filtered_diamond"
+                    ],
+                    "help_text": "You can choose one of the following: uniref90_ec_filtered_diamond (default), uniref90_diamond, uniref50_diamond, uniref50_ec_filtered_diamond"
+                }
+            },
+            "fa_icon": "fas fa-viruses"
+        },
+        "strainphlan": {
+            "title": "StrainPhlAn",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "phylophlan_mode": {
+                    "type": "string",
+                    "default": "accurate",
+                    "fa_icon": "fas fa-plane"
+                },
+                "sample_with_n_markers": {
+                    "type": "number",
+                    "default": 80,
+                    "fa_icon": "fas fa-vial"
+                },
+                "marker_in_n_samples": {
+                    "type": "number",
+                    "default": 80,
+                    "fa_icon": "fas fa-barcode"
+                },
+                "mutation_rates": {
+                    "type": "boolean",
+                    "default": true,
+                    "fa_icon": "fas fa-clone"
+                }
+            },
+            "fa_icon": "fas fa-virus"
         },
         "generic_options": {
             "title": "Generic options",
             "type": "object",
-            "fa_icon": "fas fa-file-import",
+            "fa_icon": "fas fa-wrench",
             "description": "Less common options for the pipeline, typically set in a config file.",
             "help_text": "These options are common to all nf-core pipelines and allow you to customise some of the core preferences for how the pipeline runs.\n\nTypically these options would be set in a Nextflow config file loaded for all pipeline runs, such as `~/.nextflow/config`.",
             "properties": {
@@ -260,6 +312,89 @@
                     "help_text": "Allows string values that are parseable as numbers or booleans. For further information see [JSONSchema docs](https://github.com/everit-org/json-schema#lenient-mode)."
                 }
             }
+        },
+        "max_job_request_options": {
+            "title": "Max job request options",
+            "type": "object",
+            "fa_icon": "fas fa-compress",
+            "description": "Set the top limit for requested resources for any single job.",
+            "help_text": "If you are running on a smaller system, a pipeline step requesting more resources than are available may cause the Nextflow to stop the run with an error. These options allow you to cap the maximum resources requested by any single job so that the pipeline will run on your system.\n\nNote that you can not _increase_ the resources requested by any job using these options. For that you will need your own configuration file. See [the nf-core website](https://nf-co.re/usage/configuration) for details.",
+            "properties": {
+                "max_cpus": {
+                    "type": "integer",
+                    "description": "Maximum number of CPUs that can be requested for any single job.",
+                    "default": 16,
+                    "fa_icon": "fas fa-microchip",
+                    "hidden": true,
+                    "help_text": "Use to set an upper-limit for the CPU requirement for each process. Should be an integer e.g. `--max_cpus 1`"
+                },
+                "max_memory": {
+                    "type": "string",
+                    "description": "Maximum amount of memory that can be requested for any single job.",
+                    "default": "128.GB",
+                    "fa_icon": "fas fa-memory",
+                    "pattern": "^\\d+(\\.\\d+)?\\.?\\s*(K|M|G|T)?B$",
+                    "hidden": true,
+                    "help_text": "Use to set an upper-limit for the memory requirement for each process. Should be a string in the format integer-unit e.g. `--max_memory '8.GB'`"
+                },
+                "max_time": {
+                    "type": "string",
+                    "description": "Maximum amount of time that can be requested for any single job.",
+                    "default": "240.h",
+                    "fa_icon": "far fa-clock",
+                    "pattern": "^(\\d+\\.?\\s*(s|m|h|d|day)\\s*)+$",
+                    "hidden": true,
+                    "help_text": "Use to set an upper-limit for the time requirement for each process. Should be a string in the format integer-unit e.g. `--max_time '2.h'`"
+                }
+            }
+        },
+        "institutional_config_options": {
+            "title": "Institutional config options",
+            "type": "object",
+            "fa_icon": "fas fa-university",
+            "description": "Parameters used to describe centralised config profiles. These should not be edited.",
+            "help_text": "The centralised nf-core configuration profiles use a handful of pipeline parameters to describe themselves. This information is then printed to the Nextflow log when you run a pipeline. You should not need to change these values when you run a pipeline.",
+            "properties": {
+                "custom_config_version": {
+                    "type": "string",
+                    "description": "Git commit id for Institutional configs.",
+                    "default": "master",
+                    "hidden": true,
+                    "fa_icon": "fas fa-users-cog"
+                },
+                "custom_config_base": {
+                    "type": "string",
+                    "description": "Base directory for Institutional configs.",
+                    "default": "https://raw.githubusercontent.com/nf-core/configs/master",
+                    "hidden": true,
+                    "help_text": "If you're running offline, Nextflow will not be able to fetch the institutional config files from the internet. If you don't need them, then this is not a problem. If you do need them, you should download the files from the repo and tell Nextflow where to find them with this parameter.",
+                    "fa_icon": "fas fa-users-cog"
+                },
+                "config_profile_name": {
+                    "type": "string",
+                    "description": "Institutional config name.",
+                    "hidden": true,
+                    "fa_icon": "fas fa-users-cog"
+                },
+                "config_profile_description": {
+                    "type": "string",
+                    "description": "Institutional config description.",
+                    "hidden": true,
+                    "fa_icon": "fas fa-users-cog"
+                },
+                "config_profile_contact": {
+                    "type": "string",
+                    "description": "Institutional config contact information.",
+                    "hidden": true,
+                    "fa_icon": "fas fa-users-cog"
+                },
+                "config_profile_url": {
+                    "type": "string",
+                    "description": "Institutional config URL link.",
+                    "hidden": true,
+                    "fa_icon": "fas fa-users-cog"
+                }
+            }
         }
     },
     "allOf": [
@@ -270,82 +405,25 @@
             "$ref": "#/definitions/reference_genome_options"
         },
         {
-            "$ref": "#/definitions/institutional_config_options"
+            "$ref": "#/definitions/skip_options"
+        },
+        {
+            "$ref": "#/definitions/preprocessing_of_reads"
+        },
+        {
+            "$ref": "#/definitions/humann"
+        },
+        {
+            "$ref": "#/definitions/strainphlan"
+        },
+        {
+            "$ref": "#/definitions/generic_options"
         },
         {
             "$ref": "#/definitions/max_job_request_options"
         },
         {
-            "$ref": "#/definitions/generic_options"
+            "$ref": "#/definitions/institutional_config_options"
         }
-    ],
-    "properties": {
-        "subsamplelevel": {
-            "type": "number",
-            "default": 20000000.0
-        },
-        "adapterlist": {
-            "type": "string"
-        },
-        "save_trimmed_fail": {
-            "type": "boolean"
-        },
-        "skip_preprocessing": {
-            "type": "boolean"
-        },
-        "skip_metaphlan": {
-            "type": "boolean"
-        },
-        "skip_humann": {
-            "type": "boolean"
-        },
-        "skip_strainphlan": {
-            "type": "boolean",
-            "default": true
-        },
-        "skip_qualityfilter": {
-            "type": "boolean"
-        },
-        "skip_humanfilter": {
-            "type": "boolean"
-        },
-        "skip_subsampling": {
-            "type": "boolean"
-        },
-        "sample_with_n_markers": {
-            "type": "number",
-            "default": 80.0
-        },
-        "marker_in_n_samples": {
-            "type": "number",
-            "default": 80.0
-        },
-        "phylophlan_mode": {
-            "type": "string",
-            "default": "accurate"
-        },
-        "mutation_rates": {
-            "type": "boolean",
-            "default": true
-        },
-        "altgenome": {
-            "type": "string"
-        },
-        "fastp_cutright": {
-            "type": "boolean",
-            "default": true
-        },
-        "fastp_windowsize": {
-            "type": "integer",
-            "default": 4
-        },
-        "fastp_meanquality": {
-            "type": "integer",
-            "default": 15
-        },
-        "fastp_length": {
-            "type": "integer",
-            "default": 70
-        }
-    }
+    ]
 }

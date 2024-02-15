@@ -46,7 +46,7 @@ Each row represents a pair of fastq files. This pipeline does not accept single-
 Now, you can run the pipeline using:
 
 ```bash
-nextflow run nf-core/metagenomicspipeline \
+nextflow run metagenomicspipeline \
    -profile <docker/singularity/.../institute> \
    --input samplesheet.csv \
    --outdir <OUTDIR>
@@ -55,7 +55,7 @@ nextflow run nf-core/metagenomicspipeline \
 Or run a test that uses the `samplesheet_test.csv` in the assets folder, using:
 
 ```bash
-nextflow run nf-core/metagenomicspipeline \
+nextflow run metagenomicspipeline \
    -profile test,singularity \
    --outdir <OUTDIR>
 ```

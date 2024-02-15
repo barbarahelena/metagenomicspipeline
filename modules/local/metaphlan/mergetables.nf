@@ -1,5 +1,5 @@
 process METAPHLAN_MERGETABLES {
-    label 'process_single'
+    label 'process_medium'
     label 'metaphlan'
     publishDir 'metaphlan/', mode: 'copy'
 
