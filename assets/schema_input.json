@@ -1,7 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema",
     "$id": "https://raw.githubusercontent.com/nf-core/metagenomicspipeline/master/assets/schema_input.json",
-    "title": "nf-core/metagenomicspipeline pipeline - params.input schema",
+    "title": "metagenomicspipeline pipeline - params.input schema",
     "description": "Schema for the file provided with params.input",
     "type": "array",
     "items": {

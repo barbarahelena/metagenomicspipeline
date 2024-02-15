@@ -95,6 +95,6 @@ This pipeline uses bioBakery software, including MetaPhlAn and HUMAnN. Please ci
 >
 > _Nat Biotechnol._ 2023. doi: [10.1038/s41587-023-01688-w](https://doi.org/10.1038/s41587-023-01688-w).
 
-If you use  this metagenomicspipeline for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) - this link will follow after the first release.
+If you use  this metagenomicspipeline for your analysis, please cite it using the following doi: [10.5281/zenodo.10663326](https://doi.org/10.5281/zenodo.10663326).
 
 An extensive list of references for the tools used by the pipeline can be found in the [`CITATIONS.md`](CITATIONS.md) file.
