@@ -1,6 +1,6 @@
-# nf-core/metagenomicspipeline: Documentation
+# metagenomicspipeline: Documentation
 
-The nf-core/metagenomicspipeline documentation is split into the following pages:
+The metagenomicspipeline documentation is split into the following pages:
 
 - [Usage](usage.md)
   - An overview of how the pipeline works and how to run it.
