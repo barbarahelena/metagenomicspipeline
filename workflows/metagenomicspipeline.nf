@@ -34,6 +34,7 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 include { METAPHLAN                         } from '../subworkflows/local/metaphlan'
 include { HUMANN                            } from '../subworkflows/local/humann'
 include { STRAINPHLAN                       } from '../subworkflows/local/strainphlan'
+include { SHORTBRED                         } from '../subworkflows/local/shortbred'
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
@@ -97,7 +98,7 @@ workflow METAGEN {
     
     //
     // SUBWORKFLOW: Metaphlan
-    //
+    //    
     if(params.skip_metaphlan == false){
         METAPHLAN ( PREPROCESSING.out.reads )
         ch_versions = ch_versions.mix(METAPHLAN.out.versions)
@@ -119,8 +120,9 @@ workflow METAGEN {
             )
             ch_versions = ch_versions.mix(STRAINPHLAN.out.versions)
         }
-    } else{
-        ch_humann_input = PREPROCESSING.out.reads.join(params.skip_metaphlan).groupTuple()
+    } else {
+        ch_humann_input = PREPROCESSING.out.reads
+            .map{ id, paths ->  [id, paths.flatten(), ch_database] }
     }
     //
     // SUBWORKFLOW: HUMAnN
@@ -128,6 +130,13 @@ workflow METAGEN {
     if(params.skip_humann == false) {
         HUMANN ( ch_humann_input, ch_database )
         ch_versions = ch_versions.mix(HUMANN.out.versions)
+    }
+    //
+    // SUBWORKFLOW: ShortBRED
+    //
+    if(params.skip_shortbred == false) {
+        SHORTBRED ( ch_humann_input )
+        ch_versions = ch_versions.mix(SHORTBRED.out.versions)
     }
 
     //
@@ -152,9 +161,10 @@ workflow METAGEN {
     ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
     ch_multiqc_files = ch_multiqc_files.mix(PREPROCESSING.out.fastqc1.collect{it[1]}.ifEmpty([]))
     ch_multiqc_files = ch_multiqc_files.mix(PREPROCESSING.out.mqc.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(METAPHLAN.out.profiles.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(METAPHLAN.out.mqc.collect{it[1]}.ifEmpty([]))
-
+    if(params.skip_metaphlan == false){
+        ch_multiqc_files = ch_multiqc_files.mix(METAPHLAN.out.profiles.collect{it[1]}.ifEmpty([]))
+        ch_multiqc_files = ch_multiqc_files.mix(METAPHLAN.out.mqc.collect{it[1]}.ifEmpty([]))
+    }
     MULTIQC (
         ch_multiqc_files.collect(),
         ch_multiqc_config.toList(),

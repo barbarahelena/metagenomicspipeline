@@ -139,7 +139,7 @@
                 },
                 "subsamplelevel": {
                     "type": "number",
-                    "default": 20000000,
+                    "default": 20000000.0,
                     "fa_icon": "fas fa-forward"
                 }
             },
@@ -179,12 +179,12 @@
                 },
                 "sample_with_n_markers": {
                     "type": "number",
-                    "default": 80,
+                    "default": 80.0,
                     "fa_icon": "fas fa-vial"
                 },
                 "marker_in_n_samples": {
                     "type": "number",
-                    "default": 80,
+                    "default": 80.0,
                     "fa_icon": "fas fa-barcode"
                 },
                 "mutation_rates": {
@@ -425,5 +425,11 @@
         {
             "$ref": "#/definitions/institutional_config_options"
         }
-    ]
+    ],
+    "properties": {
+        "skip_shortbred": {
+            "type": "boolean",
+            "default": true
+        }
+    }
 }
