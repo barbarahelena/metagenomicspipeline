@@ -1,8 +1,9 @@
 process HUMANN_HUMANN {
     tag "$meta.id"
-    label 'process_low'
-    label 'humann'
+    label 'process_medium'
+    label 'process_long'
     label 'error_retry'
+    label 'humann'
     publishDir 'humann/', mode: 'copy'
 
     input:
