@@ -1,6 +1,7 @@
 process BOWTIE2_FILTERHUMAN {
     tag "$meta.id"
-    label "process_high"
+    label "process_medium"
+    label "process_high_memory"
     label 'bowtie2'
     
     input:
