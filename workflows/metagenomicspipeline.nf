@@ -50,6 +50,7 @@ include { PREPROCESSING                     } from '../subworkflows/local/prepro
 //
 // MODULE: Installed directly from nf-core/modules
 //
+include { CAT as MERGE_RUNS                 } from '../modules/local/cat'
 include { MULTIQC                           } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS       } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
@@ -95,14 +96,47 @@ workflow METAGEN {
         params.skip_humann
     )
     ch_versions = ch_versions.mix(PREPROCESSING.out.versions)
+
+    //
+    // MODULE: merge reads
+    //
+    if ( params.perform_runmerging ) {
+        ch_reads_for_cat_branch = PREPROCESSING.out.reads
+            .map {
+                meta, reads ->
+                    def meta_new = meta - meta.subMap('run_accession')
+                    [ meta_new, reads ]
+            }
+            .groupTuple()
+            .map {
+                meta, reads ->
+                    [ meta, reads.flatten() ]
+            }
+            .branch {
+                meta, reads ->
+                cat: ( reads.size() > 2 )
+                skip: true
+            }
+
+        ch_reads_runmerged = MERGE_RUNS ( ch_reads_for_cat_branch.cat ).reads
+            .mix( ch_reads_for_cat_branch.skip )
+            .map {
+                meta, reads ->
+                [ meta, [ reads ].flatten() ]
+            }
+        ch_versions = ch_versions.mix(MERGE_RUNS.out.versions)
+    } else {
+        ch_reads_runmerged = PREPROCESSING.out.reads
+    }
+
     
     //
     // SUBWORKFLOW: Metaphlan
     //    
     if(params.skip_metaphlan == false){
-        METAPHLAN ( PREPROCESSING.out.reads )
+        METAPHLAN ( ch_reads_runmerged )
         ch_versions = ch_versions.mix(METAPHLAN.out.versions)
-        ch_humann_input = PREPROCESSING.out.reads
+        ch_humann_input = ch_reads_runmerged
             .join(METAPHLAN.out.profiles)
             .groupTuple()
             .map { id, paths, profile ->  [id, paths.flatten(), profile[0]] }

@@ -430,6 +430,9 @@
         "skip_shortbred": {
             "type": "boolean",
             "default": true
+        },
+        "perform_runmerging": {
+            "type": "boolean"
         }
     }
 }
