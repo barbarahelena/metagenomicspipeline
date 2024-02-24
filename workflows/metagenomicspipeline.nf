@@ -73,7 +73,7 @@ workflow METAGEN {
     //
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
     //
-    INPUT_CHECK ( file(params.input) )
+    INPUT_CHECK ( file(params.input), params.perform_runmerging )
     ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
 
     //

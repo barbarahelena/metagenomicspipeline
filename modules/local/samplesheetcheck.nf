@@ -5,6 +5,7 @@ process SAMPLESHEETCHECK {
 
     input:
     path samplesheet
+    val mergeruns
 
     output:
     path '*.csv'       , emit: csv
@@ -12,11 +13,13 @@ process SAMPLESHEETCHECK {
 
     when:
     task.ext.when == null || task.ext.when
+    merge = mergeruns == true ? "--mergeruns" : ""
 
     script: // This script is bundled with the pipeline, in nf-core/metagenomicspipeline/bin/
     """
     check_samplesheet.py \\
         $samplesheet \\
+        $merge \\
         samplesheet.valid.csv
 
     cat <<-END_VERSIONS > versions.yml

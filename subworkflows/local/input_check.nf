@@ -7,9 +7,10 @@ include { SAMPLESHEETCHECK } from '../../modules/local/samplesheetcheck'
 workflow INPUT_CHECK {
     take:
     samplesheet // file: /path/to/samplesheet.csv
+    mergeruns
 
     main:
-    SAMPLESHEETCHECK ( samplesheet )
+    SAMPLESHEETCHECK ( samplesheet, mergeruns )
         .csv
         .splitCsv ( header:true, sep:',' )
         .map { create_fastq_channel(it) }

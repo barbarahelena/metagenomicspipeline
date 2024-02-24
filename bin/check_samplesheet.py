@@ -108,7 +108,7 @@ class RowChecker:
                 f"It should be one of: {', '.join(self.VALID_FORMATS)}"
             )
 
-    def validate_unique_samples(self):
+    def validate_unique_samples(self, mergeruns=False):
         """
         Assert that the combination of sample name and FASTQ filename is unique.
 
@@ -116,13 +116,14 @@ class RowChecker:
         number of times the same sample exist, but with different FASTQ files, e.g., multiple runs per experiment.
 
         """
-        if len(self._seen) != len(self.modified):
-            raise AssertionError("The pair of sample name and FASTQ must be unique.")
-        seen = Counter()
-        for row in self.modified:
-            sample = row[self._sample_col]
-            seen[sample] += 1
-            row[self._sample_col] = f"{sample}_T{seen[sample]}"
+        if not mergeruns:
+            if len(self._seen) != len(self.modified):
+                raise AssertionError("The pair of sample name and FASTQ must be unique.")
+            seen = Counter()
+            for row in self.modified:
+                sample = row[self._sample_col]
+                seen[sample] += 1
+                row[self._sample_col] = f"{sample}_T{seen[sample]}"
 
 
 def read_head(handle, num_lines=10):
@@ -157,7 +158,7 @@ def sniff_format(handle):
     return dialect
 
 
-def check_samplesheet(file_in, file_out):
+def check_samplesheet(file_in, file_out, mergeruns=False):
     """
     Check that the tabular samplesheet has the structure expected by nf-core pipelines.
 
@@ -169,6 +170,7 @@ def check_samplesheet(file_in, file_out):
             CSV, TSV, or any other format automatically recognized by ``csv.Sniffer``.
         file_out (pathlib.Path): Where the validated and transformed samplesheet should
             be created; always in CSV format.
+        mergeruns (bool): Whether to perform merging of runs.
 
     Example:
         This function checks that the samplesheet follows the following structure,
@@ -200,7 +202,7 @@ def check_samplesheet(file_in, file_out):
             except AssertionError as error:
                 logger.critical(f"{str(error)} On line {i + 2}.")
                 sys.exit(1)
-        checker.validate_unique_samples()
+        checker.validate_unique_samples(mergeruns)
     header = list(reader.fieldnames)
     header.insert(1, "single_end")
     # See https://docs.python.org/3.9/library/csv.html#id3 to read up on `newline=""`.
@@ -236,6 +238,11 @@ def parse_args(argv=None):
         choices=("CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"),
         default="WARNING",
     )
+    parser.add_argument(
+        "--mergeruns",
+        help="Whether to perform merging of runs.",
+        action="store_true",
+    )
     return parser.parse_args(argv)
 
 
@@ -247,7 +254,7 @@ def main(argv=None):
         logger.error(f"The given input file {args.file_in} was not found!")
         sys.exit(2)
     args.file_out.parent.mkdir(parents=True, exist_ok=True)
-    check_samplesheet(args.file_in, args.file_out)
+    check_samplesheet(args.file_in, args.file_out, args.mergeruns)
 
 
 if __name__ == "__main__":
