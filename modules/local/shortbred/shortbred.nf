@@ -1,6 +1,6 @@
 process SHORTBRED_SHORTBRED {
     tag "$meta.id"
-    label 'process_high'
+    label 'process_low'
     label 'shortbred'
     publishDir 'shortbred/', mode: 'copy'
 
@@ -26,7 +26,8 @@ process SHORTBRED_SHORTBRED {
                 --markers ${database} \\
                 --wgs ${prefix}_concat.fastq.gz \\
                 --results ${prefix}_shortbred \\
-                --usearch /media/andrei/Data/Barbara/bin/usearch
+                --usearch ${baseDir}/bin/usearch
+                
     rm ${prefix}_concat.fastq.gz
 
     shortbred_version=\$(shortbred_identify.py --version |& sed '1!d ; s/shortbred //')

@@ -133,7 +133,7 @@ workflow METAGEN {
     //
     // SUBWORKFLOW: Metaphlan
     //    
-    if(params.skip_metaphlan == false){
+    if( params.skip_metaphlan == false ) {
         METAPHLAN ( ch_reads_runmerged )
         ch_versions = ch_versions.mix(METAPHLAN.out.versions)
         ch_humann_input = ch_reads_runmerged
@@ -143,16 +143,16 @@ workflow METAGEN {
         //
         // SUBWORKFLOW: StrainPhlan
         //
-        if(params.skip_strainphlan == false){
-            STRAINPHLAN ( 
-                METAPHLAN.out.sambz,
-                METAPHLAN.out.database,
-                params.sample_with_n_markers,
-                params.marker_in_n_samples,
-                params.phylophlan_mode,
-                params.mutation_rates
-            )
-            ch_versions = ch_versions.mix(STRAINPHLAN.out.versions)
+        if( params.skip_strainphlan == false ) {
+                STRAINPHLAN ( 
+                    METAPHLAN.out.sambz,
+                    METAPHLAN.out.database,
+                    params.sample_with_n_markers,
+                    params.marker_in_n_samples,
+                    params.phylophlan_mode,
+                    params.mutation_rates
+                )
+                ch_versions = ch_versions.mix(STRAINPHLAN.out.versions)
         }
     } else {
         ch_humann_input = PREPROCESSING.out.reads
@@ -161,14 +161,14 @@ workflow METAGEN {
     //
     // SUBWORKFLOW: HUMAnN
     //
-    if(params.skip_humann == false) {
+    if( params.skip_humann == false ) {
         HUMANN ( ch_humann_input, ch_database )
         ch_versions = ch_versions.mix(HUMANN.out.versions)
     }
     //
     // SUBWORKFLOW: ShortBRED
     //
-    if(params.skip_shortbred == false) {
+    if( params.skip_shortbred == false ) {
         SHORTBRED ( ch_humann_input )
         ch_versions = ch_versions.mix(SHORTBRED.out.versions)
     }

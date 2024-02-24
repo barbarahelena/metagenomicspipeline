@@ -11,7 +11,7 @@ process STRAINPHLAN_GETSGB {
     path "versions.yml"                    , emit: versions
 
     when:
-    task.ext.when == null || task.ext.when
+    markers.size() < 3
 
     script:
     def args = task.ext.args ?: ''

@@ -30,33 +30,35 @@ workflow STRAINPHLAN {
 
     STRAINPHLAN_GETSGB ( 
         ch_markers,
-        database 
-    )
- 
-    STRAINPHLAN_GETSGB.out.clades
-        | splitCsv( header: true, sep: '\t' )
-        | map { row -> [row.Clade] }
-        | flatten()
-        | set { ch_clades }
-    
-    STRAINPHLAN_EXTRACTMARKERS (
-        ch_clades,
         database
     )
 
-    STRAINPHLAN_STRAINPHLAN( 
-        ch_markers,
-        STRAINPHLAN_EXTRACTMARKERS.out.dbmarkers,
-        database,
-        sample_with_n_markers,
-        marker_in_n_samples,
-        phylophlan_mode,
-        mutation_rates
-    )
+    if(STRAINPHLAN_GETSGB.out.clades){
+        STRAINPHLAN_GETSGB.out.clades
+            | splitCsv( header: true, sep: '\t' )
+            | map { row -> [row.Clade] }
+            | flatten()
+            | set { ch_clades }
+    
+        STRAINPHLAN_EXTRACTMARKERS (
+            ch_clades,
+            database
+        )
 
-    STRAINPHLAN_TREEPAIRWISEDIST( 
-        STRAINPHLAN_STRAINPHLAN.out.tree
-    )
+        STRAINPHLAN_STRAINPHLAN( 
+            ch_markers,
+            STRAINPHLAN_EXTRACTMARKERS.out.dbmarkers,
+            database,
+            sample_with_n_markers,
+            marker_in_n_samples,
+            phylophlan_mode,
+            mutation_rates
+        )
+
+        STRAINPHLAN_TREEPAIRWISEDIST( 
+            STRAINPHLAN_STRAINPHLAN.out.tree
+        )
+    }
 
     emit:
     versions = ch_versions                     // channel: [ versions.yml ]
