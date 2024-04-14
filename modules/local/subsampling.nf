@@ -1,6 +1,7 @@
 process SUBSAMPLING {
     tag "$meta.id"
     label 'seqkit'
+    label 'error_retry'
     
     input:
     tuple val(meta), path(reads)
