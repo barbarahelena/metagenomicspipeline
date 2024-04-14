@@ -13,7 +13,7 @@ process FASTP {
     val   length
 
     output:
-    tuple val(meta), path('*.fastp.fastq.gz') , optional:true, emit: reads
+    tuple val(meta), path('*.fastp.fastq.gz') , emit: reads
     tuple val(meta), path('*.json')           , emit: json
     tuple val(meta), path('*.html')           , emit: html
     tuple val(meta), path('*.log')            , emit: log
@@ -25,7 +25,8 @@ process FASTP {
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def ids = meta.run_accession ? "${meta.id}_${meta.run_accession}" : "${meta.id}"
+    def prefix = task.ext.prefix ?: "${ids}"
     def adapter_list = adapter_fasta ? "--adapter_fasta ${adapter_fasta}" : ""
     def fail_fastq = save_trimmed_fail ? "--unpaired1 ${prefix}_1.fail.fastq.gz --unpaired2 ${prefix}_2.fail.fastq.gz" : ""
     def cutright = cutright ? "--cut_right" : ""

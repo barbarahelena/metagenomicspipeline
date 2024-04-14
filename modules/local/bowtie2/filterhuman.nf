@@ -18,7 +18,8 @@ process BOWTIE2_FILTERHUMAN {
 
     script:
     def args = task.ext.args ?: ""
-    def prefix = task.ext.prefix ?: "${meta.id}"
+    def ids = meta.run_accession ? "${meta.id}_${meta.run_accession}" : "${meta.id}"
+    def prefix = task.ext.prefix ?: "${ids}"
     def reads_args = "-1 ${reads[0]} -2 ${reads[1]}"
 
     """
