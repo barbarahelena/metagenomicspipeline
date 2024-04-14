@@ -33,7 +33,6 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 */
 include { METAPHLAN                         } from '../subworkflows/local/metaphlan'
 include { HUMANN                            } from '../subworkflows/local/humann'
-include { STRAINPHLAN                       } from '../subworkflows/local/strainphlan'
 include { SHORTBRED                         } from '../subworkflows/local/shortbred'
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
@@ -50,7 +49,6 @@ include { PREPROCESSING                     } from '../subworkflows/local/prepro
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { CAT as MERGE_RUNS                 } from '../modules/local/cat'
 include { MULTIQC                           } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS       } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
@@ -93,67 +91,21 @@ workflow METAGEN {
         params.skip_qualityfilter,
         params.skip_humanfilter,
         params.skip_subsampling,
-        params.skip_humann
+        params.skip_humann,
+        params.perform_runmerging
     )
     ch_versions = ch_versions.mix(PREPROCESSING.out.versions)
-
-    //
-    // MODULE: merge reads
-    //
-    if ( params.perform_runmerging ) {
-        ch_reads_for_cat_branch = PREPROCESSING.out.reads
-            .map {
-                meta, reads ->
-                    def meta_new = meta - meta.subMap('run_accession')
-                    [ meta_new, reads ]
-            }
-            .groupTuple()
-            .map {
-                meta, reads ->
-                    [ meta, reads.flatten() ]
-            }
-            .branch {
-                meta, reads ->
-                cat: ( reads.size() > 2 )
-                skip: true
-            }
-
-        ch_reads_runmerged = MERGE_RUNS ( ch_reads_for_cat_branch.cat ).reads
-            .mix( ch_reads_for_cat_branch.skip )
-            .map {
-                meta, reads ->
-                [ meta, [ reads ].flatten() ]
-            }
-        ch_versions = ch_versions.mix(MERGE_RUNS.out.versions)
-    } else {
-        ch_reads_runmerged = PREPROCESSING.out.reads
-    }
-
     
     //
     // SUBWORKFLOW: Metaphlan
     //    
     if( params.skip_metaphlan == false ) {
-        METAPHLAN ( ch_reads_runmerged )
+        METAPHLAN ( PREPROCESSING.out.reads )
         ch_versions = ch_versions.mix(METAPHLAN.out.versions)
-        ch_humann_input = ch_reads_runmerged
+        ch_humann_input = PREPROCESSING.out.reads
             .join(METAPHLAN.out.profiles)
             .groupTuple()
             .map { id, paths, profile ->  [id, paths.flatten(), profile[0]] }
-        //
-        // SUBWORKFLOW: StrainPhlan
-        //
-        if( params.skip_strainphlan == false ) {
-                STRAINPHLAN ( 
-                    METAPHLAN.out.sambz,
-                    METAPHLAN.out.database,
-                    params.sample_with_n_markers,
-                    params.marker_in_n_samples,
-                    params.phylophlan_mode,
-                    params.mutation_rates
-                )
-                ch_versions = ch_versions.mix(STRAINPHLAN.out.versions)
-        }
     } else {
         ch_humann_input = PREPROCESSING.out.reads
             .map{ id, paths ->  [id, paths.flatten(), ch_database] }
