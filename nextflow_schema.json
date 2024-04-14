@@ -98,11 +98,6 @@
                 "skip_humann": {
                     "type": "boolean",
                     "fa_icon": "fas fa-forward"
-                },
-                "skip_strainphlan": {
-                    "type": "boolean",
-                    "default": true,
-                    "fa_icon": "fas fa-forward"
                 }
             },
             "fa_icon": "fas fa-forward"
@@ -141,6 +136,20 @@
                     "type": "number",
                     "default": 20000000.0,
                     "fa_icon": "fas fa-forward"
+                },
+                "publish_mergedreads": {
+                    "type": "string",
+                    "default": "symlink",
+                    "description": "Method used to save merged reads to output directory.",
+                    "fa_icon": "fas fa-forward",
+                    "enum": [
+                        "symlink",
+                        "rellink",
+                        "link",
+                        "copy",
+                        "copyNoFollow",
+                        "move"
+                    ]
                 }
             },
             "fa_icon": "fas fa-cogs"
@@ -165,35 +174,6 @@
                 }
             },
             "fa_icon": "fas fa-viruses"
-        },
-        "strainphlan": {
-            "title": "StrainPhlAn",
-            "type": "object",
-            "description": "",
-            "default": "",
-            "properties": {
-                "phylophlan_mode": {
-                    "type": "string",
-                    "default": "accurate",
-                    "fa_icon": "fas fa-plane"
-                },
-                "sample_with_n_markers": {
-                    "type": "number",
-                    "default": 80.0,
-                    "fa_icon": "fas fa-vial"
-                },
-                "marker_in_n_samples": {
-                    "type": "number",
-                    "default": 80.0,
-                    "fa_icon": "fas fa-barcode"
-                },
-                "mutation_rates": {
-                    "type": "boolean",
-                    "default": true,
-                    "fa_icon": "fas fa-clone"
-                }
-            },
-            "fa_icon": "fas fa-virus"
         },
         "generic_options": {
             "title": "Generic options",
@@ -412,9 +392,6 @@
         },
         {
             "$ref": "#/definitions/humann"
-        },
-        {
-            "$ref": "#/definitions/strainphlan"
         },
         {
             "$ref": "#/definitions/generic_options"
