@@ -1,10 +1,11 @@
 process HUMANN_HUMANN {
     tag "$meta.id"
-    label 'process_medium'
-    label 'process_long'
-    label 'error_retry'
+    label 'error_retry_humann'
     label 'humann'
-    publishDir 'humann/', mode: 'copy'
+    label 'humann_publish'
+    cpus 8
+    memory '24.GB'
+    time '3.h'
 
     input:
     tuple val(meta), path(reads), path(taxprofile)
@@ -41,10 +42,11 @@ process HUMANN_HUMANN {
         --o-log logs/${prefix}.log \\
         $profile \\
         --threads $task.cpus \\
-        --memory-use maximum \\
+        --memory-use minimum \\
         --search-mode uniref90 \\
         --protein-database $humann_db/$folder/uniref \\
         --nucleotide-database $humann_db/chocophlan \\
+        --remove-temp-output \\
         $args \\
         --verbose
         
