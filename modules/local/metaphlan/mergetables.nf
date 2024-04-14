@@ -1,7 +1,7 @@
 process METAPHLAN_MERGETABLES {
     label 'process_medium'
     label 'metaphlan'
-    publishDir 'metaphlan/', mode: 'copy'
+    label 'metaphlan_publish'
 
     input:
     path(profiles)

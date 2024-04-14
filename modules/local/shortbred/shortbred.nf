@@ -2,7 +2,7 @@ process SHORTBRED_SHORTBRED {
     tag "$meta.id"
     label 'process_low'
     label 'shortbred'
-    publishDir 'shortbred/', mode: 'copy'
+    label 'shortbred_publish'
 
     input:
     tuple val(meta), path(reads), path(profile)
@@ -32,8 +32,8 @@ process SHORTBRED_SHORTBRED {
 
     shortbred_version=\$(shortbred_identify.py --version |& sed '1!d ; s/shortbred //')
     cat <<-END_VERSIONS > versions.yml
-        "${task.process}":
-            shortbred: \$shortbred_version
+    "${task.process}":
+        shortbred: \$shortbred_version
     END_VERSIONS
     """
 

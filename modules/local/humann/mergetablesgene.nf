@@ -1,7 +1,7 @@
 process HUMANN_MERGETABLESGENE {
     label 'process_single'
     label 'humann'
-    publishDir 'humann/', mode: 'copy'
+    label 'humann_publish'
 
     input:
     path(genes)
