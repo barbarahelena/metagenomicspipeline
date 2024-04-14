@@ -19,7 +19,6 @@
    - Subsampling reads using [`seqkit`](https://bioinf.shenwei.me/seqkit/)
 3. [`MetaPhlAn`](https://github.com/biobakery/MetaPhlAn/wiki/MetaPhlAn-4) to obtain tax profiles from reads
 4. [`HUMAnN`](https://github.com/biobakery/humann) to get gene and pathway abundance tables
-5. [`StrainPlAn`](https://github.com/biobakery/MetaPhlAn/wiki/StrainPhlAn-4) to get species-level genome bins (SGBs) and make a table of the number of SNPs between the sample strains and the reference genome based on the strain alignment - this subworkflow is under development. With the default parameters (`--skip-strainphlan true`), this part is currently skipped.
 5. Present a MultiQC report ([`MultiQC`](http://multiqc.info/))
 
 If you only want to use certain parts of the pipeline, you can use the flags `--skip-processing`, `--skip-metaphlan`, `--skip-humann` to skip certain subworkflows.
