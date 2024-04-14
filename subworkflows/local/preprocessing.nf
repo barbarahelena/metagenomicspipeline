@@ -6,6 +6,7 @@ include { FASTP                             } from '../../modules/local/fastp'
 include { FASTQC                            } from '../../modules/nf-core/fastqc/main'
 include { BOWTIE2_BUILD                     } from '../../modules/local/bowtie2/build'
 include { BOWTIE2_FILTERHUMAN               } from '../../modules/local/bowtie2/filterhuman'
+include { CAT as MERGE_RUNS                 } from '../../modules/local/cat'
 include { SUBSAMPLING                       } from '../../modules/local/subsampling'
 
 workflow PREPROCESSING {
@@ -24,6 +25,7 @@ workflow PREPROCESSING {
     skip_humanfilter
     skip_subsampling
     skip_humann
+    perform_runmerging
 
     main:
     ch_versions = Channel.empty()
@@ -72,10 +74,43 @@ workflow PREPROCESSING {
             ch_reads = BOWTIE2_FILTERHUMAN.out.reads
         }
 
+        //
+    // MODULE: merge reads
+    //
+    if ( perform_runmerging ) {
+        ch_reads_for_cat_branch = ch_reads
+            .map {
+                meta, reads ->
+                    def meta_new = meta - meta.subMap('run_accession')
+                    [ meta_new, reads ]
+            }
+            .groupTuple()
+            .map {
+                meta, reads ->
+                    [ meta, reads.flatten() ]
+            }
+            .branch {
+                meta, reads ->
+                cat: ( reads.size() > 2 )
+                skip: true
+            }
+
+        ch_reads_runmerged = MERGE_RUNS ( ch_reads_for_cat_branch.cat ).reads
+            .mix( ch_reads_for_cat_branch.skip )
+            .map {
+                meta, reads ->
+                [ meta, [ reads ].flatten() ]
+            }
+        ch_versions = ch_versions.mix(MERGE_RUNS.out.versions)
+    } else {
+        ch_reads_runmerged = ch_reads
+    }
+
+
         // Subsampling reads
         if(skip_subsampling == false){
             SUBSAMPLING (
-                ch_reads,
+                ch_reads_runmerged,
                 params.subsamplelevel
             )
             ch_versions = ch_versions.mix(SUBSAMPLING.out.versions.first())
