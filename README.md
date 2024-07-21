@@ -1,4 +1,4 @@
-# Metagenomics pipeline using MetaPhlAn, HUMAnN and StrainPhlAn
+# Metagenomics pipeline using MetaPhlAn and HUMAnN
 
  This pipeline can be used to obtain tax profiles, gene and pathway abundance tables and species-level genome bins from metagenomic reads. The input The MetaPhlAn and HUMAnN databases are in the current version downloaded as part of the pipeline and stored in the db folder (the first time you use the pipeline, it therefore takes a bit longer).
 
@@ -10,6 +10,7 @@
 ## Introduction
 
 **metagenomicspipeline** is a bioinformatics pipeline that processes shotgun metagenomics reads to obtain relative abundances, pathway abundances and strain-sharing using BioBakery software.
+![metagenomics](https://github.com/user-attachments/assets/72bf4655-47a8-4c32-bf89-46f69e19339f)
 
 1. Input check
 2. Preprocessing
