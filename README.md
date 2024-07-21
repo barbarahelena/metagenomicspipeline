@@ -9,7 +9,7 @@
 
 ## Introduction
 
-**metagenomicspipeline** is a bioinformatics pipeline that processes shotgun metagenomics reads to obtain relative abundances, pathway abundances and strain-sharing using BioBakery software.
+**metagenomicspipeline** is a bioinformatics pipeline that processes shotgun metagenomics reads to obtain relative abundances and pathway abundances using BioBakery software.
 ![metagenomics](https://github.com/user-attachments/assets/72bf4655-47a8-4c32-bf89-46f69e19339f)
 
 1. Input check
