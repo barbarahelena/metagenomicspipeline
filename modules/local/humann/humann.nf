@@ -54,16 +54,22 @@ process HUMANN_HUMANN {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        humann: \$(humann --version 2>&1 | awk '{print \$2}')
+        humann: \$(humann --version 2>&1 | grep -oP 'humann v\\K\\d+\\.\\d+' || echo "FAILED)
     END_VERSIONS
     """
     stub:
-     """
-    
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    """
+    mkdir humann_results
+    mkdir logs
+    touch humann_results/${prefix}_pathabundance.tsv
+    touch humann_results/${prefix}_pathcoverage.tsv
+    touch humann_results/${prefix}_genefamilies.tsv
+    touch logs/${prefix}.log
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        humann: \$(humann --version 2>&1 | awk '{print \$2}')
+        humann: \$(humann --version 2>&1 | grep -oP 'humann v\\K\\d+\\.\\d+' || echo "FAILED)
     END_VERSIONS
     """
 }
