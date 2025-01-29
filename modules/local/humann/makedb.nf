@@ -20,10 +20,12 @@ process HUMANN_MAKEDB {
     mkdir humann_db
 
     humann_databases \\
+        $args \\
         --download chocophlan full humann_db \\
         --update-config no
         
     humann_databases \\
+        $args \\
         --download uniref $unirefdatabase humann_db/$folder \\
         --update-config no
     """

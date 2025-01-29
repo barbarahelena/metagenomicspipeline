@@ -33,13 +33,8 @@ process BRACKEN_BUILD {
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
-    bracken_report = "${prefix}.tsv"
-    bracken_kraken_style_report = "${prefix}.kraken2.report_bracken.txt"
     """
-    touch ${prefix}.tsv
-    touch ${bracken_kraken_style_report}
+    touch "bracken.kmer_distrib"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

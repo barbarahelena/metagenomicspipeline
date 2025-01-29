@@ -38,7 +38,6 @@ process BRACKEN_BRACKEN {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     bracken_report = "${prefix}.tsv"
     bracken_kraken_style_report = "${prefix}.kraken2.report_bracken.txt"

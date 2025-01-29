@@ -28,7 +28,7 @@ process FASTP {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def adapter_list = adapter_fasta ? "--adapter_fasta ${adapter_fasta}" : ""
     def fail_fastq = save_trimmed_fail && !meta.single_end ? "--unpaired1 ${prefix}.fail.fastq.gz" : (save_trimmed_fail && meta.single_end ? "--failed_out ${prefix}.fail.fastq.gz" : "")
-    def cutright = cutright ? "--cut_right" : ""
+    def cutright_fastp = cutright ? "--cut_right" : ""
 
     // Determine input and output based on single-end or paired-end
     def input_str = meta.single_end ? "--in1 ${reads[0]}" : "--in1 ${reads[0]} --in2 ${reads[1]}"
@@ -47,7 +47,7 @@ process FASTP {
         $fail_fastq \\
         --thread $task.cpus \\
         ${meta.single_end ? '' : '--detect_adapter_for_pe'} \\
-        $cutright \\
+        $cutright_fastp \\
         --cut_window_size $windowsize \\
         --cut_mean_quality $meanquality \\
         --length_required $length \\

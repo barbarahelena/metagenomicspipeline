@@ -15,9 +15,7 @@ process HUMANN_MERGETABLESPATH {
     when:
     task.ext.when == null || task.ext.when
 
-    script:
-    def args = task.ext.args ?: ''
-    
+    script:    
     """
     echo "directory: \$PWD"
 
@@ -34,6 +32,17 @@ process HUMANN_MERGETABLESPATH {
         --input pathway_abundance_cpm.txt \\
         --output ./
     
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        humann: \$(humann --version 2>&1 | awk '{print \$2}')
+    END_VERSIONS
+    """
+    stub:
+    """
+    touch pathway_abundance.txt
+    touch pathway_abundance_cpm.txt
+    touch pathway_abundance_cpm_stratified.txt
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         humann: \$(humann --version 2>&1 | awk '{print \$2}')

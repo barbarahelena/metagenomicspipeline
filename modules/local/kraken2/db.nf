@@ -1,8 +1,8 @@
 process KRAKEN2_DB {
-    memory { ${db_name} == 'core_nt' ? '350 GB' : '50 GB' }
-    cpus 2
-    time { ${db_name} == 'core_nt' ? '1h' : '30m' }
-    queue { ${db_name} == 'core_nt' ? 'highmem' : 'long' }
+    memory { task.ext.memory }
+    cpus { task.ext.cpus }
+    time { task.ext.time }
+    queue { task.ext.queue }
     storeDir "/db/kraken2"
 
     input:
@@ -13,7 +13,6 @@ process KRAKEN2_DB {
     path "versions.yml"       , emit: versions
 
     script:
-    def args = task.ext.args ?: ''
     def db_link = db_name == 'core_nt' ? 'k2_core_nt_20241228' :
                   db_name == 'standard_8gb' ? 'k2_standard_08gb_20241228' :
                   db_name == 'standard_16gb' ? 'k2_standard_16gb_20241228' :

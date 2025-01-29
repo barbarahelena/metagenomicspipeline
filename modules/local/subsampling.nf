@@ -66,7 +66,6 @@ process SUBSAMPLING {
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${output_reads}
     touch ${prefix}_readcount.txt
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -16,7 +16,6 @@ process HUMANN_MERGETABLESGENE {
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ''
     
     """
     echo "directory: \$PWD"
@@ -34,6 +33,18 @@ process HUMANN_MERGETABLESGENE {
         --input gene_families_cpm.txt \\
         --output ./
     
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        humann: \$(humann --version 2>&1 | awk '{print \$2}')
+    END_VERSIONS
+    """
+
+    stub:
+    """
+    touch gene_families.txt
+    touch gene_families_cpm.txt
+    touch gene_families_cpm_stratified.txt
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         humann: \$(humann --version 2>&1 | awk '{print \$2}')

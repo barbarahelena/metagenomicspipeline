@@ -19,7 +19,6 @@ workflow PREPROCESSING {
     main:
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
-    ch_proc_fastqc = Channel.empty()
 
     FASTQC ( reads )
     ch_versions = ch_versions.mix(FASTQC.out.versions.first())
@@ -69,26 +68,26 @@ workflow PREPROCESSING {
     if ( params.perform_runmerging ) {
         ch_reads_for_cat_branch = ch_reads
             .map {
-                meta, reads ->
+                meta, fastqs ->
                     def meta_new = meta - meta.subMap('run_accession')
-                    [ meta_new, reads ]
+                    [ meta_new, fastqs ]
             }
             .groupTuple()
             .map {
-                meta, reads ->
-                    [ meta, reads.flatten() ]
+                meta, fastqs ->
+                    [ meta, fastqs.flatten() ]
             }
             .branch {
-                meta, reads ->
-                cat: ( reads.size() > 2 )
+                fastqs ->
+                cat: ( fastqs.size() > 2 )
                 skip: true
             }
 
         ch_reads_runmerged = MERGE_RUNS ( ch_reads_for_cat_branch.cat ).reads
             .mix( ch_reads_for_cat_branch.skip )
             .map {
-                meta, reads ->
-                [ meta, [ reads ].flatten() ]
+                meta, fastqs ->
+                [ meta, [ fastqs ].flatten() ]
             }
         ch_versions = ch_versions.mix(MERGE_RUNS.out.versions)
     } else {
