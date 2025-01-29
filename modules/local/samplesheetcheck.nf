@@ -13,13 +13,13 @@ process SAMPLESHEETCHECK {
 
     when:
     task.ext.when == null || task.ext.when
-    merge = mergeruns == true ? "--mergeruns" : ""
 
-    script: // This script is bundled with the pipeline, in nf-core/metagenomicspipeline/bin/
+    script:
+    def merge = mergeruns ? "--mergeruns" : ""
+
     """
-    check_samplesheet.py \\
+    check_samplesheet.py $merge \\
         $samplesheet \\
-        $merge \\
         samplesheet.valid.csv
 
     cat <<-END_VERSIONS > versions.yml
