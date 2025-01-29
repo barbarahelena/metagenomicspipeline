@@ -40,6 +40,7 @@ process HUMANN_HUMANN {
     fi
 
     humann \\
+        ${args} \\
         --input ${prefix}_concat.fastq.gz \\
         --input-format "fastq.gz" \\
         --output humann_results/ \\
