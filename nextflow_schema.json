@@ -83,7 +83,7 @@
                     "type": "boolean",
                     "fa_icon": "fas fa-forward"
                 },
-                "skip_humanfilter": {
+                "skip_hostfilter": {
                     "type": "boolean",
                     "fa_icon": "fas fa-forward"
                 },
@@ -98,6 +98,10 @@
                 "skip_humann": {
                     "type": "boolean",
                     "fa_icon": "fas fa-forward"
+                },
+                "skip_kraken": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-forward"
                 }
             },
             "fa_icon": "fas fa-forward"
@@ -108,6 +112,11 @@
             "description": "",
             "default": "",
             "properties": {
+                "bowtie2": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "fa_icon": "fas fa-forward"
+                },
                 "save_trimmed_fail": {
                     "type": "boolean",
                     "fa_icon": "fas fa-forward"
@@ -154,16 +163,17 @@
             },
             "fa_icon": "fas fa-cogs"
         },
-        "humann": {
+        "profiling_options": {
             "title": "HUMAnN",
             "type": "object",
             "description": "",
             "default": "",
             "properties": {
-                "database": {
+                "humann_db": {
                     "type": "string",
                     "fa_icon": "fas fa-database",
                     "description": "Which uniref database to use",
+                    "default": "uniref90_ec_filtered_diamond",
                     "enum": [
                         "uniref90_diamond",
                         "uniref90_ec_filtered_diamond",
@@ -171,6 +181,68 @@
                         "uniref50_ec_filtered_diamond"
                     ],
                     "help_text": "You can choose one of the following: uniref90_ec_filtered_diamond (default), uniref90_diamond, uniref50_diamond, uniref50_ec_filtered_diamond"
+                },
+                "kraken2_db": {
+                    "type": "string",
+                    "fa_icon": "fas fa-database",
+                    "description": "path to kraken database",
+                    "help_text": ""
+                },
+                "kraken2_dbname": {
+                    "type": "string",
+                    "fa_icon": "fas fa-database",
+                    "description": "Name of Kraken2 database to download",
+                    "default": "standard_16gb",
+                    "enum": [
+                        "standard_16gb",
+                        "standard_8gb",
+                        "core_nt"
+                    ],
+                    "help_text": ""
+                },
+                "kraken2_save_reads": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-database",
+                    "description": "",
+                    "help_text": ""
+                },
+                "kraken2_save_readclassifications": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-database",
+                    "description": "",
+                    "help_text": ""
+                },
+                "kraken2_save_minimizers": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-database",
+                    "description": "",
+                    "help_,text": ""
+                },
+                "bracken_readlength": {
+                    "type": "integer",
+                    "fa_icon": "fas fa-database",
+                    "description": "The read length used for Bracken, default 150",
+                    "help_text": ""
+                },
+                "bracken_build": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-database",
+                    "description": "Build the Bracken database, even if one exists in kraken_db path",
+                    "help_text": ""
+                },
+                "bracken_kmerlength": {
+                    "type": "integer",
+                    "fa_icon": "fas fa-database",
+                    "description": "The kmer length used for Bracken, default 35",
+                    "default": 35,
+                    "help_text": ""
+                },
+                "bracken_threshold": {
+                    "type": "number",
+                    "fa_icon": "fas fa-database",
+                    "description": "The number of reads used as threshold used for Bracken, default 10",
+                    "default": 10,
+                    "help_text": ""
                 }
             },
             "fa_icon": "fas fa-viruses"
@@ -391,7 +463,7 @@
             "$ref": "#/definitions/preprocessing_of_reads"
         },
         {
-            "$ref": "#/definitions/humann"
+            "$ref": "#/definitions/profiling_options"
         },
         {
             "$ref": "#/definitions/generic_options"
