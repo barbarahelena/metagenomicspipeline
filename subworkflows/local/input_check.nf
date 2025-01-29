@@ -7,10 +7,9 @@ include { SAMPLESHEETCHECK } from '../../modules/local/samplesheetcheck'
 workflow INPUT_CHECK {
     take:
     samplesheet // file: /path/to/samplesheet.csv
-    mergeruns
 
     main:
-    SAMPLESHEETCHECK ( samplesheet, mergeruns )
+    SAMPLESHEETCHECK ( samplesheet, params.perform_runmerging )
         .csv
         .splitCsv ( header:true, sep:',' )
         .map { create_fastq_channel(it) }
@@ -26,6 +25,7 @@ def create_fastq_channel(LinkedHashMap row) {
     // create meta map
     def meta = [:]
     meta.id         = row.sample
+    meta.single_end = row.single_end
 
     // add path(s) of the fastq file(s) to the meta map
     def fastq_meta = []

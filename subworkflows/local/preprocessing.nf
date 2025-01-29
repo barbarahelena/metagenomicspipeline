@@ -1,11 +1,11 @@
 //
-// Preprocessing reads: fastp quality filtering and filtering out human reads
+// Preprocessing reads: fastp quality filtering and filtering out host reads
 //
 
 include { FASTP                             } from '../../modules/local/fastp'
 include { FASTQC                            } from '../../modules/nf-core/fastqc/main'
 include { BOWTIE2_BUILD                     } from '../../modules/local/bowtie2/build'
-include { BOWTIE2_FILTERHUMAN               } from '../../modules/local/bowtie2/filterhuman'
+include { BOWTIE2_FILTERHOST                } from '../../modules/local/bowtie2/filterhost'
 include { CAT as MERGE_RUNS                 } from '../../modules/local/cat'
 include { SUBSAMPLING                       } from '../../modules/local/subsampling'
 
@@ -15,17 +15,6 @@ workflow PREPROCESSING {
     reference
     bowtie2index
     adapters
-    savetrimmed
-    cutright
-    windowsize
-    meanquality
-    length
-    skip_preprocessing
-    skip_qualityfilter
-    skip_humanfilter
-    skip_subsampling
-    skip_humann
-    perform_runmerging
 
     main:
     ch_versions = Channel.empty()
@@ -35,17 +24,17 @@ workflow PREPROCESSING {
     FASTQC ( reads )
     ch_versions = ch_versions.mix(FASTQC.out.versions.first())
     
-    if(skip_preprocessing == false) {
-        if(skip_qualityfilter == false){
+    if(params.skip_preprocessing == false) {
+        if(params.skip_qualityfilter == false){
             // Quality filtering, adapter trimming
             FASTP (
                 reads, 
                 adapters,
-                savetrimmed,
-                cutright,
-                windowsize, 
-                meanquality, 
-                length
+                params.save_trimmed_fail,
+                params.fastp_cutright,
+                params.fastp_windowsize, 
+                params.fastp_meanquality, 
+                params.fastp_length
             )
             ch_versions = ch_versions.mix( FASTP.out.versions.first() )
             ch_multiqc_files = ch_multiqc_files.mix( FASTP.out.json )
@@ -55,7 +44,7 @@ workflow PREPROCESSING {
         }
 
         // Remove human reads
-        if(skip_humanfilter == false){
+        if(params.skip_hostfilter == false){
             if (!bowtie2index) {
                 // Build index of reference genome
                 BOWTIE2_BUILD ( reference )
@@ -65,19 +54,19 @@ workflow PREPROCESSING {
                 ch_bowtie2_index = bowtie2index
             }
             // Map, generate BAM with all reads and unmapped reads in fastq.gz for downstream
-            BOWTIE2_FILTERHUMAN ( 
+            BOWTIE2_FILTERHOST ( 
                 ch_reads, 
                 ch_bowtie2_index
             )
-            ch_versions      = ch_versions.mix( BOWTIE2_FILTERHUMAN.out.versions.first() )
-            ch_multiqc_files = ch_multiqc_files.mix( BOWTIE2_FILTERHUMAN.out.log )
-            ch_reads = BOWTIE2_FILTERHUMAN.out.reads
+            ch_versions      = ch_versions.mix( BOWTIE2_FILTERHOST.out.versions.first() )
+            ch_multiqc_files = ch_multiqc_files.mix( BOWTIE2_FILTERHOST.out.log )
+            ch_reads = BOWTIE2_FILTERHOST.out.reads
         }
 
         //
     // MODULE: merge reads
     //
-    if ( perform_runmerging ) {
+    if ( params.perform_runmerging ) {
         ch_reads_for_cat_branch = ch_reads
             .map {
                 meta, reads ->
@@ -108,7 +97,7 @@ workflow PREPROCESSING {
 
 
         // Subsampling reads
-        if(skip_subsampling == false){
+        if(params.skip_subsampling == false){
             SUBSAMPLING (
                 ch_reads_runmerged,
                 params.subsamplelevel

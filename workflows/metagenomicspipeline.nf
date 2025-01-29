@@ -32,8 +32,10 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 include { METAPHLAN                         } from '../subworkflows/local/metaphlan'
+include { KRAKEN                            } from '../subworkflows/local/kraken'
 include { HUMANN                            } from '../subworkflows/local/humann'
 include { SHORTBRED                         } from '../subworkflows/local/shortbred'
+include { CUSTOM_DUMPSOFTWAREVERSIONS       } from '../modules/local/dumpsoftwareversions/main'
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
@@ -50,7 +52,6 @@ include { PREPROCESSING                     } from '../subworkflows/local/prepro
 // MODULE: Installed directly from nf-core/modules
 //
 include { MULTIQC                           } from '../modules/nf-core/multiqc/main'
-include { CUSTOM_DUMPSOFTWAREVERSIONS       } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -64,35 +65,24 @@ def multiqc_report = []
 workflow METAGEN {
     ch_adapterlist = params.adapterlist ? file(params.adapterlist) : []
     ch_reference = params.fasta ? file(params.fasta) : []
-    ch_database = params.database ? params.database : []
-    ch_bowtie2_index = params.bowtie2 ? params.bowtie2 : []
+    ch_kraken_db = params.kraken2_db ? file(params.kraken2_db) : []
+    ch_humann_db = params.humann_db ? params.humann_db : []
+    ch_bowtie2_index = params.bowtie2 ? Channel.value(params.bowtie2) : []
     ch_versions = Channel.empty()
 
     //
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
     //
-    INPUT_CHECK ( file(params.input), params.perform_runmerging )
+    INPUT_CHECK ( file(params.input) )
     ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
-
     //
-    // SUBWORKFLOW: preprocessing of reads (quality filter, human read filtering, subsampling)
+    // SUBWORKFLOW: preprocessing of reads (quality filter, host read filtering, subsampling)
     //
     PREPROCESSING (
         INPUT_CHECK.out.reads,
         ch_reference,
         ch_bowtie2_index,
-        ch_adapterlist,
-        params.save_trimmed_fail,
-        params.fastp_cutright,
-        params.fastp_windowsize,
-        params.fastp_meanquality,
-        params.fastp_length,
-        params.skip_preprocessing,
-        params.skip_qualityfilter,
-        params.skip_humanfilter,
-        params.skip_subsampling,
-        params.skip_humann,
-        params.perform_runmerging
+        ch_adapterlist
     )
     ch_versions = ch_versions.mix(PREPROCESSING.out.versions)
     
@@ -102,21 +92,39 @@ workflow METAGEN {
     if( params.skip_metaphlan == false ) {
         METAPHLAN ( PREPROCESSING.out.reads )
         ch_versions = ch_versions.mix(METAPHLAN.out.versions)
-        ch_humann_input = PREPROCESSING.out.reads
-            .join(METAPHLAN.out.profiles)
-            .groupTuple()
-            .map { id, paths, profile ->  [id, paths.flatten(), profile[0]] }
+        if( PREPROCESSING.out.reads.map{ it[0].single_end }) {
+            ch_humann_input = PREPROCESSING.out.reads
+                .join( METAPHLAN.out.profiles )
+        } else {
+            ch_humann_input = PREPROCESSING.out.reads
+                .join(METAPHLAN.out.profiles)
+                .groupTuple()
+                .map { id, paths, profile ->  [id, paths.flatten(), profile[0]] }
+        }
     } else {
-        ch_humann_input = PREPROCESSING.out.reads
-            .map{ id, paths ->  [id, paths.flatten(), ch_database] }
+        if( PREPROCESSING.out.reads.map{ it[0].single_end }) {
+            ch_humann_input = PREPROCESSING.out.reads
+        } else {
+            ch_humann_input = PREPROCESSING.out.reads
+                .map{ id, paths ->  [ id, paths.flatten() ] }
+        }
     }
+
     //
     // SUBWORKFLOW: HUMAnN
-    //
     if( params.skip_humann == false ) {
-        HUMANN ( ch_humann_input, ch_database )
+        HUMANN ( ch_humann_input, ch_humann_db )
         ch_versions = ch_versions.mix(HUMANN.out.versions)
     }
+
+    //
+    // SUBWORKFLOW: KRAKEN 
+    //
+    if( params.skip_kraken == false ) {
+        KRAKEN ( PREPROCESSING.out.reads, ch_kraken_db )
+        ch_versions = ch_versions.mix(KRAKEN.out.versions)
+    }
+
     //
     // SUBWORKFLOW: ShortBRED
     //
@@ -151,11 +159,18 @@ workflow METAGEN {
         ch_multiqc_files = ch_multiqc_files.mix(METAPHLAN.out.profiles.collect{it[1]}.ifEmpty([]))
         ch_multiqc_files = ch_multiqc_files.mix(METAPHLAN.out.mqc.collect{it[1]}.ifEmpty([]))
     }
+    if(params.skip_kraken == false){
+        ch_multiqc_files = ch_multiqc_files.mix(KRAKEN.out.report.collect{it[1]}.ifEmpty([]))
+        ch_multiqc_files = ch_multiqc_files.mix(KRAKEN.out.mqc.collect{it[1]}.ifEmpty([]))
+    }
+
     MULTIQC (
         ch_multiqc_files.collect(),
         ch_multiqc_config.toList(),
         ch_multiqc_custom_config.toList(),
-        ch_multiqc_logo.toList()
+        ch_multiqc_logo.ifEmpty([]),
+        [],
+        []
     )
     multiqc_report = MULTIQC.out.report.toList()
 }
@@ -168,7 +183,9 @@ workflow METAGEN {
 
 workflow.onComplete {
     if (params.email || params.email_on_fail) {
-        NfcoreTemplate.email(workflow, params, summary_params, projectDir, log, multiqc_report)
+        NfcoreTemplate.email(workflow, params, summary_params, projectDir, log, 
+        //multiqc_report
+        [] )
     }
     NfcoreTemplate.dump_parameters(workflow, params)
     NfcoreTemplate.summary(workflow, params, log)
