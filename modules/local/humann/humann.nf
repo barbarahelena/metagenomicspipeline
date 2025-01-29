@@ -27,12 +27,17 @@ process HUMANN_HUMANN {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def profile = "$taxprofile" == true ? "" : "--taxonomic-profile $taxprofile"
     def unirefdatabase = database ? database : "uniref90_ec_filtered_diamond"
-    def folder = unirefdatabase == "uniref90_ec_filtered_diamond" ? "uniref_filt" : unirefdatabase == "uniref90_diamond" ? "uniref" : "otherdb" 
+    def folder = unirefdatabase == "uniref90_ec_filtered_diamond" ? "uniref_filt" : unirefdatabase == "uniref90_diamond" ? "uniref" : "otherdb"
+    def input = !meta.single_end ? "${reads[0]},${reads[1]}" : "$reads"
 
     """
     mkdir humann_results
     mkdir logs
-    cat ${reads[0]} ${reads[1]} > ${prefix}_concat.fastq.gz
+    if [ "${meta.single_end}" == "True" ]; then
+        cp ${input} ${prefix}_concat.fastq.gz
+    else
+        cat ${input[0]} ${input[1]} > ${prefix}_concat.fastq.gz
+    fi
 
     humann \\
         --input ${prefix}_concat.fastq.gz \\
