@@ -22,11 +22,11 @@ process SHORTBRED_SHORTBRED {
     """
     cat ${reads[0]} ${reads[1]} > ${prefix}_concat.fastq.gz
 
-    shortbred_quantify.py \\
+    shortbred_quantify.py $args \\
                 --markers ${database} \\
                 --wgs ${prefix}_concat.fastq.gz \\
                 --results ${prefix}_shortbred \\
-                --usearch ${baseDir}/bin/usearch
+                --usearch usearch
                 
     rm ${prefix}_concat.fastq.gz
 
@@ -38,7 +38,6 @@ process SHORTBRED_SHORTBRED {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}.bam
