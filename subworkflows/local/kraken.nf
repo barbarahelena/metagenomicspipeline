@@ -7,6 +7,7 @@ include { KRAKEN2_KRAKEN2                   } from '../../modules/local/kraken2/
 include { BRACKEN_BUILD                     } from '../../modules/local/bracken/build'
 include { BRACKEN_BRACKEN                   } from '../../modules/local/bracken/bracken'
 include { BRACKEN_COMBINEBRACKENOUTPUTS     } from '../../modules/local/bracken/combinebrackenoutputs'
+include { BRACKEN_COMBINEKRAKENOUTPUTS      } from '../../modules/local/bracken/combinekrakenoutputs'
 
 workflow KRAKEN {
 
@@ -19,16 +20,17 @@ workflow KRAKEN {
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
     if(! kraken2_db) {
-        KRAKEN2_DB( params.kraken_dbname )
-        ch_versions = ch_versions.mix(KRAKEN2_DB.out.versions.first())
-        kraken2_db = KRAKEN2_DB.out.kraken2_db
+        KRAKEN2_DB( params.kraken2_dbname )
+        ch_dbkraken = KRAKEN2_DB.out.db
+    } else {
+        ch_dbkraken = kraken2_db
     }
     //
     // MODULE: Kraken profiling
     //
     KRAKEN2_KRAKEN2 (
         reads, 
-        kraken2_db, 
+        ch_dbkraken, 
         params.kraken2_save_reads, 
         params.kraken2_save_readclassifications
     )
@@ -43,15 +45,15 @@ workflow KRAKEN {
     //
     if ((!kmer_distrib_exists) | params.bracken_build ) {
         BRACKEN_BUILD( 
-            kraken2_db,
+            ch_dbkraken,
             params.bracken_readlength,
             params.bracken_kmerlength
         )
-        bracken_db = BRACKEN_BUILD.out.bracken_db
-        ch_versions = ch_versions.mix(BRACKEN_BUILD.out.versions.first())
+        ch_dbbracken = BRACKEN_BUILD.out.bracken_db
+        ch_versions = ch_versions.mix(BRACKEN_BUILD.out.versions)
     }
     if (kmer_distrib_exists) {
-        bracken_db = kraken2_db
+        ch_dbbracken = ch_dbkraken
     }
 
     //
@@ -59,7 +61,7 @@ workflow KRAKEN {
     //
     BRACKEN_BRACKEN(
         KRAKEN2_KRAKEN2.out.report, 
-        bracken_db,
+        ch_dbbracken,
         params.bracken_readlength,
         params.bracken_threshold
         )
@@ -67,6 +69,8 @@ workflow KRAKEN {
 
     ch_profiles_bracken = BRACKEN_BRACKEN.out.reports.collect {it[1]}
     BRACKEN_COMBINEBRACKENOUTPUTS( ch_profiles_bracken )
+    ch_profiles_kraken = BRACKEN_BRACKEN.out.txt.collect { it[1] }
+    BRACKEN_COMBINEKRAKENOUTPUTS( ch_profiles_kraken )
 
     emit:
     report = KRAKEN2_KRAKEN2.out.report                 // channel [ meta, Kraken report ]
