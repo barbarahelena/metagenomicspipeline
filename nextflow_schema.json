@@ -192,11 +192,13 @@
                     "type": "string",
                     "fa_icon": "fas fa-database",
                     "description": "Name of Kraken2 database to download",
-                    "default": "standard_16gb",
+                    "default": "standard_64gb",
                     "enum": [
+                        "standard_64gb",
                         "standard_16gb",
                         "standard_8gb",
-                        "core_nt"
+                        "core_nt",
+                        "custom"
                     ],
                     "help_text": ""
                 },
