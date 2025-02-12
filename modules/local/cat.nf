@@ -14,7 +14,6 @@ process CAT {
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def readList = reads instanceof List ? reads.collect{ it.toString() } : [reads.toString()]
     if (readList.size >= 2) {
