@@ -1,13 +1,13 @@
 //
 // Preprocessing reads: fastp quality filtering and filtering out host reads
 //
-
 include { FASTP                             } from '../../modules/local/fastp'
 include { FASTQC                            } from '../../modules/nf-core/fastqc/main'
 include { BOWTIE2_BUILD                     } from '../../modules/local/bowtie2/build'
 include { BOWTIE2_FILTERHOST                } from '../../modules/local/bowtie2/filterhost'
 include { CAT as MERGE_RUNS                 } from '../../modules/local/cat'
 include { SUBSAMPLING                       } from '../../modules/local/subsampling'
+include { CAT_READCOUNTS                    } from '../../modules/local/cat_readcounts'
 
 workflow PREPROCESSING {
     take:
@@ -103,6 +103,9 @@ workflow PREPROCESSING {
             )
             ch_versions = ch_versions.mix(SUBSAMPLING.out.versions.first())
             ch_reads = SUBSAMPLING.out.reads
+            CAT_READCOUNTS (
+                ch_reads.out.log.collect()
+            )
         }
     } else {
         ch_reads = reads
