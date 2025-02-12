@@ -7,10 +7,11 @@ process HUMANN_MERGETABLESGENE {
     path(genes)
 
     output:
-    path "gene_families.txt"                , emit: genes
-    path "gene_families_cpm.txt"            , emit: genescpm
-    path "gene_families_cpm_stratified.txt" , emit: genesstrata
-    path "versions.yml"                     , emit: versions
+    path "gene_families.txt"                    , emit: genes
+    path "gene_families_cpm.txt"                , emit: genescpm
+    path "gene_families_cpm_stratified.txt"     , emit: genesstrata
+    path "gene_families_cpm_unstratified.txt"   , emit: genesnostrata
+    path "versions.yml"                         , emit: versions
 
     when:
     task.ext.when == null || task.ext.when

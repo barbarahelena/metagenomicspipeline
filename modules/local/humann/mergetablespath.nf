@@ -7,10 +7,11 @@ process HUMANN_MERGETABLESPATH {
     path(paths)
 
     output:
-    path "pathway_abundance.txt"               , emit: path
-    path "pathway_abundance_cpm.txt"           , emit: pathcpm
-    path "pathway_abundance_cpm_stratified.txt", emit: pathstrata
-    path "versions.yml"                        , emit: versions
+    path "pathway_abundance.txt"                    , emit: path
+    path "pathway_abundance_cpm.txt"                , emit: pathcpm
+    path "pathway_abundance_cpm_stratified.txt"     , emit: pathstrata
+    path "pathway_abundance_cpm_unstratified.txt"   , emit: pathnostrata
+    path "versions.yml"                             , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
