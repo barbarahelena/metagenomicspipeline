@@ -1,10 +1,5 @@
 process KRAKEN2_KRAKEN2 {
     tag "$meta.id"
-    memory '400 GB'
-    cpus 4
-    time '1h'
-    queue "highmem"
-    maxForks 3
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -57,13 +52,9 @@ process KRAKEN2_KRAKEN2 {
     """
 
     stub:
-    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def paired       = meta.single_end ? "" : "--paired"
     def classified   = meta.single_end ? "${prefix}.classified.fastq.gz"   : "${prefix}.classified_1.fastq.gz ${prefix}.classified_2.fastq.gz"
     def unclassified = meta.single_end ? "${prefix}.unclassified.fastq.gz" : "${prefix}.unclassified_1.fastq.gz ${prefix}.unclassified_2.fastq.gz"
-    def readclassification_option = save_reads_assignment ? "--output ${prefix}.kraken2.classifiedreads.txt" : "--output /dev/null"
-    def compress_reads_command = save_output_fastqs ? "pigz -p $task.cpus *.fastq" : ""
 
     """
     touch ${prefix}.kraken2.report.txt
