@@ -60,9 +60,10 @@ process HUMANN_HUMANN {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        humann: \$(humann --version 2>&1 | grep -oP 'humann v\\K\\d+\\.\\d+' || echo "FAILED)
+        humann: \$(humann --version 2>&1 | grep -oP 'humann v\K[0-9.]+'")
     END_VERSIONS
     """
+
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
@@ -75,7 +76,7 @@ process HUMANN_HUMANN {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        humann: \$(humann --version 2>&1 | grep -oP 'humann v\\K\\d+\\.\\d+' || echo "FAILED)
+        humann: \$(humann --version 2>&1 | grep -oP 'humann v\K[0-9.]+'")
     END_VERSIONS
     """
 }
