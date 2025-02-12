@@ -1,8 +1,4 @@
 process BRACKEN_BUILD {
-    memory '350 GB'
-    cpus 16
-    time '1h'
-    queue "highmem"
 
     input:
     path kraken_db
