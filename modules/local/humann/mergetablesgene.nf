@@ -36,7 +36,7 @@ process HUMANN_MERGETABLESGENE {
     
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        humann: \$(humann --version 2>&1 | grep -oP 'humann v\K[0-9.]+'')
+        humann: 3.9
     END_VERSIONS
     """
 
@@ -48,7 +48,7 @@ process HUMANN_MERGETABLESGENE {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        humann: \$(humann --version 2>&1 | grep -oP 'humann v\K[0-9.]+'')
+        humann: 3.9
     END_VERSIONS
     """
 }
