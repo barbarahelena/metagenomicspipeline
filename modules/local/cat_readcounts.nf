@@ -23,10 +23,10 @@ process CAT_READCOUNTS {
     # Iterate through all *_readcount.txt files in the folder
     for file in ${readcounts}; do
         # Extract the sampleID from the filename
-        sampleID=$(basename "\$file" _readcount.txt)
+        sampleID=\$(basename "\$file" _readcount.txt)
         
         # Extract the readcount from the file content
-        readcount=$(grep "Reads in" "\$file" | awk '{print \$4}')
+        readcount=\$(grep "Reads in" "\$file" | awk '{print \$4}')
         
         # Check if readcount is not empty
         if [ -n "\$readcount" ]; then
