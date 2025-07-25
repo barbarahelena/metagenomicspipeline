@@ -7,4 +7,4 @@ dependencies:
   - conda-forge::python=3.10
   - conda-forge::pip
   - pip:
-    - humann=3.9
+    - humann==4.0.0a1

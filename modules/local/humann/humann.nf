@@ -29,15 +29,14 @@ process HUMANN_HUMANN {
     def profile = "$taxprofile" == true ? "" : "--taxonomic-profile $taxprofile"
     def unirefdatabase = database ? database : "uniref90_ec_filtered_diamond"
     def folder = unirefdatabase == "uniref90_ec_filtered_diamond" ? "uniref_filt" : unirefdatabase == "uniref90_diamond" ? "uniref" : "otherdb"
-    def input = !meta.single_end ? "${reads[0]},${reads[1]}" : "$reads"
 
     """
     mkdir humann_results
     mkdir logs
     if [ "${meta.single_end}" == "True" ]; then
-        cp ${input} ${prefix}_concat.fastq.gz
+        cp ${reads} ${prefix}_concat.fastq.gz
     else
-        cat ${input[0]} ${input[1]} > ${prefix}_concat.fastq.gz
+        cat ${reads[0]} ${reads[1]} > ${prefix}_concat.fastq.gz
     fi
 
     humann \\
@@ -50,9 +49,9 @@ process HUMANN_HUMANN {
         $profile \\
         --threads $task.cpus \\
         --memory-use minimum \\
-        --search-mode uniref90 \\
         --protein-database $humann_db/$folder/uniref \\
         --nucleotide-database $humann_db/chocophlan \\
+        --utility-database $humann_db/$folder/utility_mapping \\
         --remove-temp-output \\
         $args \\
         --verbose

@@ -29,5 +29,9 @@ process HUMANN_MAKEDB {
         $args \\
         --download uniref $unirefdatabase humann_db/$folder \\
         --update-config no
+    
+    humann_databases \\
+        --download utility_mapping full \\
+        humann_db/$folder
     """
 }
