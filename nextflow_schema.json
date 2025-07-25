@@ -59,6 +59,15 @@
                     "hidden": true,
                     "help_text": "Do not load `igenomes.config` when running the pipeline. You may choose this option if you observe clashes between custom parameters and those supplied in `igenomes.config`."
                 },
+                "genome": {
+                    "type": "string",
+                    "description": "Name of iGenomes reference.",
+                    "fa_icon": "fas fa-book",
+                    "minLength": 1,
+                    "pattern": "^[a-zA-Z0-9_\\-\\.]+$",
+                    "errorMessage": "The genome name must not contain spaces and must be a valid identifier.",
+                    "help_text": "If using a reference genome configured with iGenomes (not recommended), provide the ID for the reference (e.g., `--genome GRCh38`). This builds paths for all required reference files. See the [nf-core documentation](https://nf-co.re/usage/reference_genomes) for details."
+                },
                 "fasta": {
                     "type": "string",
                     "fa_icon": "fas fa-file-alt"
