@@ -63,9 +63,9 @@ include { MULTIQC                           } from '../modules/nf-core/multiqc/m
 def multiqc_report = []
 
 def getGenomeAttribute(attribute) {
-    if (params.genomes && params.host_genome && params.genomes.containsKey(params.host_genome)) {
-        if (params.genomes[params.host_genome].containsKey(attribute)) {
-            return params.genomes[params.host_genome][attribute]
+    if (params.genomes && params.genome && params.genomes.containsKey(params.genome)) {
+        if (params.genomes[params.genome].containsKey(attribute)) {
+            return params.genomes[params.genome][attribute]
         }
     }
     return null
@@ -77,9 +77,8 @@ workflow METAGEN {
                     params.genome ? getGenomeAttribute('fasta') : []
     ch_kraken_db = params.kraken2_db ? file(params.kraken2_db) : []
     ch_humann_db = params.humann_db ? params.humann_db : []
-    ch_bowtie2_index = params.bowtie2 ? 
-                   (params.bowtie2_index ? file(params.bowtie2_index) : 
-                    getGenomeAttribute('bowtie2_index')) : []
+    ch_bowtie2_index = params.bowtie2_index ? file(params.bowtie2_index) : 
+                    params.genome ? getGenomeAttribute('bowtie2') : []
     ch_versions = Channel.empty()
 
     //
