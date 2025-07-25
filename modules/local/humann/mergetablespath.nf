@@ -2,6 +2,7 @@ process HUMANN_MERGETABLESPATH {
     label 'process_single'
     label 'humann'
     label 'humann_publish'
+    conda "${moduleDir}/environment.yml"
 
     input:
     path(paths)

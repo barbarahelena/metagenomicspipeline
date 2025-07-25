@@ -2,6 +2,7 @@ process HUMANN_MAKEDB {
     label 'process_medium'
     label 'humann'
     storeDir 'db'
+    conda "${moduleDir}/environment.yml"
 
     input:
     val database

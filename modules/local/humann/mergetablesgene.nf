@@ -2,6 +2,7 @@ process HUMANN_MERGETABLESGENE {
     label 'process_single'
     label 'humann'
     label 'humann_publish'
+    conda "${moduleDir}/environment.yml"
 
     input:
     path(genes)

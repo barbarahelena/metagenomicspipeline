@@ -6,6 +6,7 @@ process HUMANN_HUMANN {
     cpus 8
     memory '24.GB'
     time '3.h'
+    conda "${moduleDir}/environment.yml"
 
     input:
     tuple val(meta), path(reads), path(taxprofile)
