@@ -8,7 +8,7 @@ process BOWTIE2_FILTERHOST {
     path index
 
     output:
-    tuple val(meta), path("*_unmapped*.fastq.gz"), emit: reads
+    tuple val(meta), path("*.fastq.gz"), emit: reads
     tuple val(meta), path("*.log"), emit: log
     tuple val(meta), path("*.stats"), emit: stats
     path "versions.yml", emit: versions
