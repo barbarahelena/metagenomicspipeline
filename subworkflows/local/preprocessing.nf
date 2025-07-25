@@ -103,8 +103,9 @@ workflow PREPROCESSING {
             )
             ch_versions = ch_versions.mix(SUBSAMPLING.out.versions.first())
             ch_reads = SUBSAMPLING.out.reads
+            ch_logs = SUBSAMPLING.out.log.map{it[2]}.collect()
             CAT_READCOUNTS (
-                SUBSAMPLING.out.log.collect()
+                ch_logs
             )
         }
     } else {
