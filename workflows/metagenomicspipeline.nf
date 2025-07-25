@@ -67,7 +67,14 @@ workflow METAGEN {
     ch_reference = params.fasta ? file(params.fasta) : []
     ch_kraken_db = params.kraken2_db ? file(params.kraken2_db) : []
     ch_humann_db = params.humann_db ? params.humann_db : []
-    ch_bowtie2_index = params.bowtie2 ? Channel.value(params.bowtie2) : []
+    if (params.bowtie2) {
+                   params.genome && params.genomes[params.genome].bowtie2 ? 
+                   Channel.value(params.genomes[params.genome].bowtie2) : 
+                   []
+    } else {
+        ch_bowtie2_index = []
+    }
+    }
     ch_versions = Channel.empty()
 
     //
