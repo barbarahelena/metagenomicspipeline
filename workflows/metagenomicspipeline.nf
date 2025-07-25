@@ -74,7 +74,6 @@ workflow METAGEN {
     } else {
         ch_bowtie2_index = []
     }
-    }
     ch_versions = Channel.empty()
 
     //
