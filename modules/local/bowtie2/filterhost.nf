@@ -51,7 +51,7 @@ process BOWTIE2_FILTERHOST {
     rm ${prefix}.bai
     rm ${prefix}.bam
 
-    if [ "${meta.single_end}" == "false" ]; then
+    if [ "${meta.single_end}" == "False" ]; then
         if [ -f ${prefix}_unmapped.fastq.1.gz ]; then
             mv ${prefix}_unmapped.fastq.1.gz ${prefix}_unmapped_1.fastq.gz
         fi
