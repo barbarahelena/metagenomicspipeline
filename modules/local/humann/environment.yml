@@ -8,3 +8,4 @@ dependencies:
   - conda-forge::pip
   - pip:
     - humann==4.0.0a1
+    - metaphlan==4.1

@@ -9,7 +9,7 @@ process HUMANN_HUMANN {
     conda "${moduleDir}/environment.yml"
 
     input:
-    tuple val(meta), path(reads), path(taxprofile)
+    tuple val(meta), path(reads)
     path humann_db
     val database
 
@@ -26,11 +26,13 @@ process HUMANN_HUMANN {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def profile = "$taxprofile" == true ? "" : "--taxonomic-profile $taxprofile"
     def unirefdatabase = database ? database : "uniref90_ec_filtered_diamond"
     def folder = unirefdatabase == "uniref90_ec_filtered_diamond" ? "uniref_filt" : unirefdatabase == "uniref90_diamond" ? "uniref" : "otherdb"
 
     """
+    BT2_DB=`find -L "${humann_db}/metaphlan_db_oct22" -name "*rev.1.bt2*" -exec dirname {} \\;`
+    BT2_DB_INDEX=`find -L "${humann_db}/metaphlan_db_oct22" -name "*.rev.1.bt2*" | sed 's/\\.rev.1.bt2.*\$//' | sed 's/.*\\///'`
+
     mkdir humann_results
     mkdir logs
     if [ "${meta.single_end}" == "True" ]; then
@@ -39,6 +41,8 @@ process HUMANN_HUMANN {
         cat ${reads[0]} ${reads[1]} > ${prefix}_concat.fastq.gz
     fi
 
+    humann --help
+
     humann \\
         ${args} \\
         --input ${prefix}_concat.fastq.gz \\
@@ -46,14 +50,13 @@ process HUMANN_HUMANN {
         --output humann_results/ \\
         --output-basename ${prefix} \\
         --o-log logs/${prefix}.log \\
-        $profile \\
         --threads $task.cpus \\
         --memory-use minimum \\
         --protein-database $humann_db/$folder/uniref \\
         --nucleotide-database $humann_db/chocophlan \\
         --utility-database $humann_db/$folder/utility_mapping \\
+        --metaphlan-options "--bowtie2db \$BT2_DB --index \$BT2_DB_INDEX -t rel_ab_w_read_stats" \\
         --remove-temp-output \\
-        $args \\
         --verbose
         
     rm ${prefix}_concat.fastq.gz

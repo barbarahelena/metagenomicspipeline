@@ -36,6 +36,7 @@ process METAPHLAN_METAPHLAN {
         $input_data \\
         $args \\
         $bowtie2_out \\
+        -t rel_ab_w_read_stats \\
         -s ${prefix}.sam.bz2 \\
         --bowtie2db \$BT2_DB \\
         --index \$BT2_DB_INDEX \\

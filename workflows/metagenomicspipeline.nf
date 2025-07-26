@@ -103,28 +103,28 @@ workflow METAGEN {
     if( params.skip_metaphlan == false ) {
         METAPHLAN ( PREPROCESSING.out.reads )
         ch_versions = ch_versions.mix(METAPHLAN.out.versions)
-        if( PREPROCESSING.out.reads.map{ it[0].single_end }) {
-            ch_humann_input = PREPROCESSING.out.reads
-                .join( METAPHLAN.out.profiles )
-        } else {
-            ch_humann_input = PREPROCESSING.out.reads
-                .join(METAPHLAN.out.profiles)
-                .groupTuple()
-                .map { id, paths, profile ->  [id, paths.flatten(), profile[0]] }
-        }
+        // if( PREPROCESSING.out.reads.map{ it[0].single_end }) {
+        //     ch_humann_input = PREPROCESSING.out.reads
+        //         .join( METAPHLAN.out.profiles )
+        // } else {
+        //     ch_humann_input = PREPROCESSING.out.reads
+        //         .join(METAPHLAN.out.profiles)
+        //         .groupTuple()
+        //         .map { id, paths, profile ->  [id, paths.flatten(), profile[0]] }
+        // }
     } else {
-        if( PREPROCESSING.out.reads.map{ it[0].single_end }) {
-            ch_humann_input = PREPROCESSING.out.reads
-        } else {
-            ch_humann_input = PREPROCESSING.out.reads
-                .map{ id, paths ->  [ id, paths.flatten() ] }
-        }
+        // if( PREPROCESSING.out.reads.map{ it[0].single_end }) {
+        //     ch_humann_input = PREPROCESSING.out.reads
+        // } else {
+        //     ch_humann_input = PREPROCESSING.out.reads
+        //         .map{ id, paths ->  [ id, paths.flatten() ] }
+        // }
     }
 
     //
     // SUBWORKFLOW: HUMAnN
     if( params.skip_humann == false ) {
-        HUMANN ( ch_humann_input, ch_humann_db )
+        HUMANN ( PREPROCESSING.out.reads, ch_humann_db )
         ch_versions = ch_versions.mix(HUMANN.out.versions)
     }
 
