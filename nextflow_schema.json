@@ -173,7 +173,7 @@
             "fa_icon": "fas fa-cogs"
         },
         "profiling_options": {
-            "title": "HUMAnN",
+            "title": "Profiling options",
             "type": "object",
             "description": "",
             "default": "",
