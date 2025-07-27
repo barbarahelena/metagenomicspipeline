@@ -331,22 +331,36 @@ class NfcoreTemplate {
     }
 
     //
-    // nf-core logo
+    // metagenomics logo
     //
+    
     public static String logo(workflow, monochrome_logs) {
-        Map colors = logColours(monochrome_logs)
-        String workflow_version = NfcoreTemplate.version(workflow)
-        String.format(
-            """\n
-            ${dashedLine(monochrome_logs)}
-                                                    ${colors.green},--.${colors.black}/${colors.green},-.${colors.reset}
-            ${colors.blue}        ___     __   __   __   ___     ${colors.green}/,-._.--~\'${colors.reset}
-            ${colors.blue}  |\\ | |__  __ /  ` /  \\ |__) |__         ${colors.yellow}}  {${colors.reset}
-            ${colors.blue}  | \\| |       \\__, \\__/ |  \\ |___     ${colors.green}\\`-._,-`-,${colors.reset}
-                                                    ${colors.green}`._,._,\'${colors.reset}
-            ${colors.purple}  ${workflow.manifest.name} ${workflow_version}${colors.reset}
-            ${dashedLine(monochrome_logs)}
-            """.stripIndent()
-        )
-    }
+    Map colors = logColours(monochrome_logs)
+    String workflow_version = NfcoreTemplate.version(workflow)
+    String reset = colors.reset ?: "\033[0m"
+
+    // Flagella string placed on the middle line (line 3) of each bacterium
+    String flagella = "\\/\\/\\/\\/\\/\\/"
+
+    String.format(
+        """\n
+        ${dashedLine(monochrome_logs)}
+        ${colors.bblue}         ╭─────────────╮              ${reset}
+        ${colors.bblue}        ╭╯             ╰╮             ${reset}
+        ${colors.bblue}        │               │${flagella}  ${reset}
+        ${colors.bblue}        ╰╮             ╭╯             ${reset}
+        ${colors.bblue}         ╰─────────────╯              ${reset}
+
+        ${colors.bgreen}                 ╭─────────────╮           ${reset}
+        ${colors.bgreen}                ╭╯             ╰╮          ${reset}
+        ${colors.bgreen}                │               │${flagella}  ${reset}
+        ${colors.bgreen}                ╰╮             ╭╯          ${reset}
+        ${colors.bgreen}                 ╰─────────────╯           ${reset}
+
+        ${colors.bpurple}             ${workflow.manifest.name} ${workflow_version}       ${reset}
+           ${colors.blue}         Metagenomics Analysis Pipeline            ${reset}
+        ${dashedLine(monochrome_logs)}
+        """.stripIndent()
+    )
+}
 }
