@@ -1,6 +1,6 @@
-# Metagenomics pipeline using MetaPhlAn and HUMAnN
+# Metagenomics pipeline to get taxonomy and pathways
 
- This pipeline can be used to obtain tax profiles, gene and pathway abundance tables and species-level genome bins from metagenomic reads. The input The MetaPhlAn and HUMAnN databases are in the current version downloaded as part of the pipeline and stored in the db folder (the first time you use the pipeline, it therefore takes a bit longer).
+ This pipeline can be used to obtain tax profiles, pathway abundance tables from metagenomic reads. The input The MetaPhlAn, HUMAnN and Kraken2 databases are in the current version downloaded as part of the pipeline and stored in the db folder (the first time you use the pipeline, it therefore takes a bit longer).
 
 [![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A523.04.0-23aa62.svg)](https://www.nextflow.io/)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
@@ -10,7 +10,8 @@
 ## Introduction
 
 **metagenomicspipeline** is a bioinformatics pipeline that processes shotgun metagenomics reads to obtain relative abundances and pathway abundances using BioBakery software.
-![metagenomics](https://github.com/user-attachments/assets/72bf4655-47a8-4c32-bf89-46f69e19339f)
+
+![metagenomics](docs/images/Metagenomicsflow.png)
 
 1. Input check
 2. Preprocessing
@@ -18,11 +19,11 @@
    - Quality filtering and adapter trimming with [`fastp`](https://github.com/OpenGene/fastp)
    - Human read filtering: [`Bowtie2`](https://bowtie-bio.sourceforge.net/bowtie2/index.shtml) to build an index and align reads with the human reference genome to filter out human reads and [`Samtools`](http://www.htslib.org/) stats for read stats
    - Subsampling reads using [`seqkit`](https://bioinf.shenwei.me/seqkit/)
-3. [`MetaPhlAn`](https://github.com/biobakery/MetaPhlAn/wiki/MetaPhlAn-4) to obtain tax profiles from reads
-4. [`HUMAnN`](https://github.com/biobakery/humann) to get gene and pathway abundance tables
+3. Taxonomy profiles: [`MetaPhlAn`](https://github.com/biobakery/MetaPhlAn/wiki/MetaPhlAn-4) (default) or [`Kraken2`](https://github.com/DerrickWood/kraken2)
+4. Pathway abundances: [`HUMAnN`](https://github.com/biobakery/humann)
 5. Present a MultiQC report ([`MultiQC`](http://multiqc.info/))
 
-If you only want to use certain parts of the pipeline, you can use the flags `--skip-processing`, `--skip-metaphlan`, `--skip-humann` to skip certain subworkflows.
+If you only want to use certain parts of the pipeline, you can use the flags `--skip-processing`, `--skip-metaphlan`, `--skip-humann` to skip certain subworkflows. If you want to get Kraken2 profiles instead of MetaPhlAn, use `--skip-kraken false`.
 
 ## Usage
 
@@ -41,22 +42,27 @@ sample,fastq_1,fastq_2
 CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
 ```
 
-Each row represents a pair of fastq files. This pipeline does not accept single-end data.
+Each row represents a pair of fastq files. This pipeline does accept single-end and paired-end fastq files. For single-end data, use only `fastq_1`. 
 
 Now, you can run the pipeline using:
 
 ```bash
-nextflow run metagenomicspipeline \
+nextflow run barbarahelena/metagenomicspipeline \
    -profile <docker/singularity/.../institute> \
    --input samplesheet.csv \
+   --genome GRCh38 \
    --outdir <OUTDIR>
 ```
 
-Or run a test that uses the `samplesheet_test.csv` in the assets folder, using:
+The subsampling level is by default is 20 million. If you want to change this subsampling level, you can specify it by using `--subsamplelevel 10000000` (to set it to 10 million, for example).
+
+I recommend using `docker` or `singularity`, this is a lot less error prone because of the containerized environments. If you don't have container software installed, you can also use `conda` as profile. For users at the University of Amsterdam: use the profile `snellius` if you are using the Snellius (uses Singularity by default).
+
+You can also run a test that uses the `samplesheet_test.csv` in the assets folder (you don't need data for this), using:
 
 ```bash
-nextflow run metagenomicspipeline \
-   -profile test,singularity \
+nextflow run barbarahelena/metagenomicspipeline \
+   -profile test \
    --outdir <OUTDIR>
 ```
 
@@ -81,20 +87,6 @@ For further information or help, don't hesitate to get in touch.
 
 ## Citations
 
-This pipeline uses bioBakery software, including MetaPhlAn and HUMAnN. Please cite their papers:
-
-> **Integrating taxonomic, functional, and strain-level profiling of diverse microbial communities with bioBakery**
->
-> Francesco Beghini, Lauren J McIver, Aitor Blanco-Mìguez, Leonard Dubois, Francesco Asnicar, Sagun Maharjan, Ana Mailyan, Andrew Maltez Thomas,Paolo Manghi, Mireia Valles-Colomer, George Weingart, Yancong Zhang, Moreno Zolfo, Curtis Huttenhower, Eric A Franzosa, Nicola Segata
->
-> _eLife_ 2021 10:e65088. doi: [10.7554/eLife.65088](https://doi.org/10.7554/eLife.65088).
-
-> **Extending and improving metagenomic taxonomic profiling with uncharacterized species using MetaPhlAn 4**
->
-> Aitor Blanco-Miguez, Francesco Beghini, Fabio Cumbo, Lauren J. McIver, Kelsey N. Thompson, Moreno Zolfo, Paolo Manghi, Leonard Dubois, Kun D. Huang, Andrew Maltez Thomas, Gianmarco Piccinno, Elisa Piperni, Michal Punčochář, Mireia Valles-Colomer, Adrian Tett, Francesca Giordano, Richard Davies, Jonathan Wolf, Sarah E. Berry, Tim D. Spector, Eric A. Franzosa, Edoardo Pasolli, Francesco Asnicar, Curtis Huttenhower, Nicola Segata.
->
-> _Nat Biotechnol._ 2023. doi: [10.1038/s41587-023-01688-w](https://doi.org/10.1038/s41587-023-01688-w).
+This pipeline uses bioBakery software, including MetaPhlAn and HUMAnN. It also uses Kraken2, if you specify it in the options (`--skip_metaphlan`, with `--skip_kraken false`). Please cite the papers of these tools. An extensive list of references for the tools used by the pipeline can be found in the [`CITATIONS.md`](CITATIONS.md) file.
 
 If you use  this metagenomicspipeline for your analysis, please cite it using the following doi: [10.5281/zenodo.10663326](https://doi.org/10.5281/zenodo.10663326).
-
-An extensive list of references for the tools used by the pipeline can be found in the [`CITATIONS.md`](CITATIONS.md) file.

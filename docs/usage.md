@@ -21,10 +21,6 @@ sample,fastq_1,fastq_2
 CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
 CONTROL_REP2,AEG588A2_S2_L002_R1_001.fastq.gz,AEG588A2_S2_L002_R2_001.fastq.gz
 CONTROL_REP3,AEG588A3_S3_L002_R1_001.fastq.gz,AEG588A3_S3_L002_R2_001.fastq.gz
-TREATMENT_REP1,AEG588A4_S4_L003_R1_001.fastq.gz,
-TREATMENT_REP2,AEG588A5_S5_L003_R1_001.fastq.gz,
-TREATMENT_REP3,AEG588A6_S6_L003_R1_001.fastq.gz,
-TREATMENT_REP3,AEG588A6_S6_L004_R1_001.fastq.gz,
 ```
 
 | Column    | Description                                                                                                                                                                            |
@@ -40,7 +36,11 @@ An [example samplesheet](../assets/samplesheet.csv) has been provided with the p
 The typical command for running the pipeline is as follows:
 
 ```bash
-nextflow run nf-core/metagenomicspipeline --input ./samplesheet.csv --outdir ./results --genome GRCh37 -profile docker
+nextflow run barbarahelena/metagenomicspipeline \
+  --input ./samplesheet.csv \
+  --outdir ./results \
+  --genome GRCh38 \ 
+  -profile docker
 ```
 
 This will launch the pipeline with the `docker` configuration profile. See below for more information about profiles.
@@ -65,7 +65,7 @@ Do not use `-c <file>` to specify parameters as this will result in errors. Cust
 The above pipeline run specified with a params file in yaml format:
 
 ```bash
-nextflow run nf-core/metagenomicspipeline -profile docker -params-file params.yaml
+nextflow run barbarahelena/metagenomicspipeline -profile docker -params-file params.yaml
 ```
 
 with `params.yaml` containing:
@@ -73,7 +73,7 @@ with `params.yaml` containing:
 ```yaml
 input: './samplesheet.csv'
 outdir: './results/'
-genome: 'GRCh37'
+genome: 'GRCh38'
 <...>
 ```
 
@@ -148,7 +148,7 @@ Specify the path to a specific config file (this is a core Nextflow command). Se
 
 ### HPC settings
 
-I had some problems getting Nextflow pipelines to work on an HPC. This is a short list of issues I encountered with solutions. These solutions are all implemented, although for slurm use and the job name replacement you have to use `-profile snellius`.
+I had some problems getting Nextflow pipelines to work on an HPC. This is a short list of issues I encountered with solutions. These solutions are all implemented, although for SLURM use and the job name replacement you have to use `-profile snellius`.
 
 #### Use singularity
 

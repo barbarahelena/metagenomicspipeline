@@ -15,7 +15,6 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
 - [Subsampling](#subsampling)
 - [MetaPhlAn](#metaphlan) - tax profiling
 - [HUMAnN](#humann) - gene and pathway abundance table
-- [StrainPhlAn](#strainphlan) - species-level genome bins (SGBs)
 - [MultiQC](#multiqc) - Aggregate report describing results and QC from the whole pipeline
 - [Pipeline information](#pipeline-information) - Report metrics generated during the workflow execution
 
@@ -95,7 +94,7 @@ The FastQC plots displayed in the MultiQC report shows _untrimmed_ reads. They m
 
 - `metaphlan/`
   - `*_profile.txt`: tax profile per sample
-  - `*.biom`: biom file per sample
+  - `*.mapout.txt`: mapout file per sample
   - `*.sam.bz2`: compressed sam file 
   - `*.concat.fastq.gz`: concatenated forward and reverse reads
   - `combined_table.txt`: merged metaphlan tax profile table
@@ -113,11 +112,8 @@ The FastQC plots displayed in the MultiQC report shows _untrimmed_ reads. They m
   - `humann_results/`: output of HUMAnN per sample
     - `*_genefamilies.tsv`: gene family abundance in reads per kilobase (RPK)
     - `*_pathabundance.tsv`: pathway abundance
-    - `*_pathcoverage.tsv`: pathway coverage (presence / absence)
+    - `*_reactions.tsv`: reactions
   - `logs/`: logs of HUMAnN per sample
-  - `gene_families.txt`: gene families abundance (merged)
-  - `gene_families_cpm.txt`: gene families abundance (merged) in counts per million
-  - `gene_families_cpm_stratified.txt`: pathway abundance (merged) in cpm and stratified
   - `pathway_abundance.txt`: pathway abundance (merged)
   - `pathway_abundance_cpm.txt`: pathway abundance (merged) in counts per million
   - `pathway_abundance_cpm_stratified.txt`: pathway abundance (merged) in cpm and stratified
@@ -126,16 +122,17 @@ The FastQC plots displayed in the MultiQC report shows _untrimmed_ reads. They m
 
 [HUMAnN](https://github.com/biobakery/humann) is a tool for characterizing the functional potential of microbial communities. It quantifies gene and pathway abundance, allowing researchers to understand the metabolic capabilities of the microbiome. The output includes various files summarizing gene families and pathway abundance.
 
-### StrainPhlAn
+### Kraken2
 
 <details markdown="1">
 <summary>Output files</summary>
 
-- `strainphlan/`
+- `kraken2/`
+  - 
 
 </details>
 
-[StrainPhlAn](https://github.com/biobakery/MetaPhlAn/wiki/StrainPhlAn-4) focuses on obtaining strain-level information from metagenomic data. It identifies species-level genome bins (SGBs), providing a more detailed view of microbial community composition.
+[Kraken2](https://github.com/DerrickWood/kraken2) is a taxonomic sequence classifier that assigns taxonomic labels to DNA sequences. Kraken examines the k-mers within a query sequence.
 
 ### MultiQC
 
