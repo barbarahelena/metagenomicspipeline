@@ -18,6 +18,18 @@
 
   > Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 2016 Oct 1;32(19):3047-8. doi: 10.1093/bioinformatics/btw354. Epub 2016 Jun 16. PubMed PMID: 27312411; PubMed Central PMCID: PMC5039924.
 
+- [MetaPhlAn](https://github.com/biobakery/MetaPhlAn)
+
+  > Francesco Beghini, Lauren J McIver, Aitor Blanco-Mìguez, Leonard Dubois, Francesco Asnicar, Sagun Maharjan, Ana Mailyan, Andrew Maltez Thomas,Paolo Manghi, Mireia Valles-Colomer, George Weingart, Yancong Zhang, Moreno Zolfo, Curtis Huttenhower, Eric A Franzosa, Nicola Segata. Integrating taxonomic, functional, and strain-level profiling of diverse microbial communities with bioBakery. _eLife_ 2021 10:e65088. doi: [10.7554/eLife.65088](https://doi.org/10.7554/eLife.65088).
+
+- [Kraken2](https://github.com/DerrickWood/kraken2)
+
+  > Aitor Blanco-Miguez, Francesco Beghini, Fabio Cumbo, Lauren J. McIver, Kelsey N. Thompson, Moreno Zolfo, Paolo Manghi, Leonard Dubois, Kun D. Huang, Andrew Maltez Thomas, Gianmarco Piccinno, Elisa Piperni, Michal Punčochář, Mireia Valles-Colomer, Adrian Tett, Francesca Giordano, Richard Davies, Jonathan Wolf, Sarah E. Berry, Tim D. Spector, Eric A. Franzosa, Edoardo Pasolli, Francesco Asnicar, Curtis Huttenhower, Nicola Segata. Extending and improving metagenomic taxonomic profiling with uncharacterized species using MetaPhlAn 4. _Nat Biotechnol._ 2023. doi: [10.1038/s41587-023-01688-w](https://doi.org/10.1038/s41587-023-01688-w).
+
+- [HUMAnN](https://github.com/biobakery/humann)
+
+  > Francesco Beghini, Lauren J McIver, Aitor Blanco-Mìguez, Leonard Dubois, Francesco Asnicar, Sagun Maharjan, Ana Mailyan, Andrew Maltez Thomas, Paolo Manghi, Mireia Valles-Colomer, George Weingart, Yancong Zhang, Moreno Zolfo, Curtis Huttenhower, Eric A Franzosa, Nicola Segata. Integrating taxonomic, functional, and strain-level profiling of diverse microbial communities with bioBakery 3. _eLife_ 2021. doi: [10.7554/eLife.65088](https://doi.org/10.7554/eLife.65088).
+
 ## Software packaging/containerisation tools
 
 - [Singularity](https://pubmed.ncbi.nlm.nih.gov/28494014/)
