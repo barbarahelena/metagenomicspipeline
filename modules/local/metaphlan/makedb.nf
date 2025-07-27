@@ -16,7 +16,7 @@ process METAPHLAN_MAKEDB {
     metaphlan \\
         --install \\
         --nproc $task.cpus \\
-        --bowtie2db metaphlan_db \\
+        --db_dir metaphlan_db \\
         $args
     """
 }
