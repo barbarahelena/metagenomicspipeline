@@ -78,8 +78,8 @@ workflow PREPROCESSING {
                     [ meta, fastqs.flatten() ]
             }
             .branch {
-                fastqs ->
-                cat: ( fastqs.size() > 2 )
+                meta, fastqs ->
+                cat: ( meta.single_end && fastqs.size() > 1 ) || ( !meta.single_end && fastqs.size() > 2 )
                 skip: true
             }
 
