@@ -4,7 +4,6 @@
 
 include { HUMANN_MAKEDB                     } from '../../modules/local/humann/makedb'
 include { HUMANN_HUMANN                     } from '../../modules/local/humann/humann'
-include { HUMANN_MERGETABLESGENE            } from '../../modules/local/humann/mergetablesgene'
 include { HUMANN_MERGETABLESPATH            } from '../../modules/local/humann/mergetablespath'
 
 workflow HUMANN {
@@ -37,13 +36,6 @@ workflow HUMANN {
     ch_pathways_humann = HUMANN_HUMANN.out.pathways.collect {it[1]}
     HUMANN_MERGETABLESPATH(
         ch_pathways_humann
-    )
-    //
-    // MODULE: HUMANN fix tables: genes
-    //
-    ch_genes_humann = HUMANN_HUMANN.out.genes.collect {it[1]}
-    HUMANN_MERGETABLESGENE(
-        ch_genes_humann
     )
 
     emit:
