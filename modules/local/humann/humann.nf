@@ -15,7 +15,7 @@ process HUMANN_HUMANN {
 
     output:
     tuple val(meta), path("humann_results/*_pathabundance.tsv")  ,                emit: pathways
-    tuple val(meta), path("humann_results/*_pathcoverage.tsv")   ,                emit: reactions
+    tuple val(meta), path("humann_results/*_reactions.tsv")      ,                emit: reactions
     tuple val(meta), path("humann_results/*_genefamilies.tsv")   ,                emit: genes
     tuple val(meta), path("logs/*.log")                          ,                emit: log
     path "versions.yml"                                          ,                emit: versions
