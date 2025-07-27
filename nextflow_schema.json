@@ -72,10 +72,16 @@
                     "type": "string",
                     "fa_icon": "fas fa-file-alt"
                 },
-                "adapterlist": {
+                "bowtie2": {
                     "type": "string",
+                    "format": "directory-path",
                     "fa_icon": "fas fa-forward"
-                }
+                },
+                "bowtie2_index": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "fa_icon": "fas fa-forward"
+                }                
             }
         },
         "skip_options": {
@@ -121,9 +127,8 @@
             "description": "",
             "default": "",
             "properties": {
-                "bowtie2": {
+                "adapterlist": {
                     "type": "string",
-                    "format": "directory-path",
                     "fa_icon": "fas fa-forward"
                 },
                 "save_trimmed_fail": {
