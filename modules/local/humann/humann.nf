@@ -27,7 +27,6 @@ process HUMANN_HUMANN {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def unirefdatabase = database ? database : "uniref90_ec_filtered_diamond"
-    def folder = unirefdatabase == "uniref90_ec_filtered_diamond" ? "uniref_filt" : unirefdatabase == "uniref90_diamond" ? "uniref" : "otherdb"
 
     """
     BT2_DB=`find -L "${humann_db}/metaphlan_db" -name "*rev.1.bt2*" -exec dirname {} \\;`
@@ -52,7 +51,7 @@ process HUMANN_HUMANN {
         --o-log logs/${prefix}.log \\
         --threads $task.cpus \\
         --memory-use minimum \\
-        --protein-database $humann_db/$folder \\
+        --protein-database $humann_db/uniref \\
         --nucleotide-database $humann_db/chocophlan \\
         --utility-database $humann_db/utility_mapping \\
         --metaphlan-options "--bowtie2db \$BT2_DB --index \$BT2_DB_INDEX -t rel_ab_w_read_stats" \\
