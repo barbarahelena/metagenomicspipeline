@@ -3,15 +3,18 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## v.1.0.0 - [27/7/2025]
+## v.1.0.0 - [28/7/2025]
 
 Major update to the workflow: now works with single-end and paired-end reads, integrated Kraken2 and updated MetaPhlAn and HUMAnN versions. The nf-core modules for `FastQC` and `MultiQC` were updated.
 
 ### `Added`
 - Single-end reads input: Pipeline now automatically detects and processes both single-end and paired-end FASTQ files
-- Kraken2: Taxonomic classification with customizable databases and confidence thresholds
+- Kraken2: Taxonomic classification with different database options
 - Bracken: Species-level abundance estimation from Kraken2 output
 - Skip parameters: Added `--skip_kraken2`, `--skip_metaphlan`, `--skip_humann` options for flexible workflow execution
+- Added process to merge all read counts in one table (after removal of host reads)
+- Added `-profile test` and `-profile test_full` with test setup for HUMAnN database download, so that the size of the test db is a lot smaller.
+- Ensured that `-profile conda` works, although container use (Apptainer/Singularity or Docker) is still recommended
 - Conditional tool citations: Citations in MultiQC reports now reflect only the tools actually used in the run
 
 ### `Dependencies`
