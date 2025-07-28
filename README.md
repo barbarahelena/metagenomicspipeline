@@ -66,9 +66,8 @@ nextflow run barbarahelena/metagenomicspipeline \
    --outdir <OUTDIR>
 ```
 
+### HPC
 If you are working on an HPC, there might be specific rules on how many jobs the pipeline can submit in a specific timeframe. I wrote a separate instruction for use on HPCs in the [usage documentation](https://github.com/barbarahelena/metagenomicspipeline/blob/master/docs/output.md)
-
-If you have multiple runs of the same sample that have to be merged, this is possible in the pipeline. Just add the runs as separate lines in the samplesheet, with a column `run_accession`. The entries with the same sample ID but different run accession values will be merged after the host read removal, and prior to the subsampling process.
 
 For more details and further functionality, please refer to the [usage documentation](https://github.com/barbarahelena/metagenomicspipeline/blob/master/docs/output.md) and the [parameter documentation](https://github.com/barbarahelena/metagenomicspipeline/blob/master/docs/parameters.md).
 

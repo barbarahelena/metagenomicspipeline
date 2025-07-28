@@ -79,6 +79,17 @@ genome: 'GRCh38'
 
 You can also generate such `YAML`/`JSON` files via [nf-core/launch](https://nf-co.re/launch).
 
+### General notes
+
+### Run merging
+If you have multiple runs of the same sample that have to be merged, this is possible in the pipeline. Just add the runs as separate lines in the samplesheet, with a column `run_accession`. The entries with the same sample ID but different run accession values will be merged after the host read removal, and prior to the subsampling process.
+
+### Storage space
+MetaPhlAn and HUMAnN require considerable storage space for the databases, altogether 115GB (50GB for MetaPhlAn and 65GB for HUMAnN). If you want to run Kraken2, you can choose which database you want to use (ranging from 8GB to 220GB). The test profile skips MetaPhlAn and HUMAnN for this reason, and runs Kraken2 with the 8GB database instead. The test_full profile runs MetaPhlAn, HUMAnN and Kraken2.
+
+### Store directories
+The databases are downloaded in a store directory that will be created in the launch folder. Every run, Nextflow will check if the folder that it needs still exists. In that case, the download process is skipped. Please delete the database folders if you change anything in the launch command that might affect which databases are downloaded (e.g. when switching from a test profile to a regular run).
+
 ### Updating the pipeline
 
 When you run the above command, Nextflow automatically pulls the pipeline code from GitHub and stores it as a cached version. When running the pipeline after this, it will always use the cached version if available - even if the pipeline has been updated since. To make sure that you're running the latest version of the pipeline, make sure that you regularly update the cached version of the pipeline:
