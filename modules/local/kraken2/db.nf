@@ -3,13 +3,13 @@ process KRAKEN2_DB {
     cpus { task.ext.cpus }
     time { task.ext.time }
     queue { task.ext.queue }
-    storeDir "/db/kraken2"
+    storeDir "db/kraken2"
 
     input:
     val db_name
     
     output:
-    path("${db_name}")        , emit: db
+    path("${db_name}")                                         , emit: db
 
     script:
     def db_link = db_name == 'core_nt' ? 'k2_core_nt_20241228' :
@@ -20,8 +20,15 @@ process KRAKEN2_DB {
     """
     mkdir -p ${db_name}
     wget -O ${db_name}.tar.gz https://genome-idx.s3.amazonaws.com/kraken/${db_link}.tar.gz
-    tar -xvf ${db_name}.tar.gz -C ${db_name} --strip-components 1
+    
+    # Extract preserving original database structure
+    tar -tf ${db_name}.tar.gz | head -10
+    tar -xzf ${db_name}.tar.gz -C ${db_name}
+    
     rm ${db_name}.tar.gz
+    
+    # Verify extraction worked
+    ls -la ${db_name}/
     """
 
     stub:

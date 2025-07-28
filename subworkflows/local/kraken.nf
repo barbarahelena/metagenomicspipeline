@@ -19,12 +19,46 @@ workflow KRAKEN {
 
     ch_versions = Channel.empty()
     ch_multiqc_files = Channel.empty()
-    if(! kraken2_db) {
+    
+    if( !kraken2_db ) {
         KRAKEN2_DB( params.kraken2_dbname )
         ch_dbkraken = KRAKEN2_DB.out.db
     } else {
         ch_dbkraken = kraken2_db
     }
+
+    if ( params.bracken_build || !kraken2_db ) {
+        // Only build if user requests it OR if we downloaded a new database that might not have kmer_distrib
+        if ( !kraken2_db ) {
+            // We downloaded the DB, so we should have kmer_distrib already
+            // Use the existing one unless user specifically wants to rebuild
+            if ( !params.bracken_build ) {
+                ch_dbbracken = ch_dbkraken  // Use the downloaded kmer_distrib
+            } else {
+                // User wants to rebuild anyway
+                BRACKEN_BUILD( 
+                    ch_dbkraken,
+                    params.bracken_readlength,
+                    params.bracken_kmerlength
+                )
+                ch_dbbracken = BRACKEN_BUILD.out.bracken_db
+                ch_versions = ch_versions.mix(BRACKEN_BUILD.out.versions)
+            }
+        } else {
+            // We have a pre-existing database, need to build kmer_distrib
+            BRACKEN_BUILD( 
+                ch_dbkraken,
+                params.bracken_readlength,
+                params.bracken_kmerlength
+            )
+            ch_dbbracken = BRACKEN_BUILD.out.bracken_db
+            ch_versions = ch_versions.mix(BRACKEN_BUILD.out.versions)
+        }
+    } else {
+        // Use the database as-is for Bracken
+        ch_dbbracken = ch_dbkraken
+    }
+
     //
     // MODULE: Kraken profiling
     //
@@ -36,25 +70,6 @@ workflow KRAKEN {
     )
     ch_versions        = ch_versions.mix( KRAKEN2_KRAKEN2.out.versions.first() )
     ch_multiqc_files   = ch_multiqc_files.mix( KRAKEN2_KRAKEN2.out.report )
-
-    pathdb = file("${kraken2_db}/*${params.bracken_readlength}mers.kmer_distrib")
-    kmer_distrib_exists = params.kraken2_db ? !pathdb.isEmpty() : false
-
-    //
-    // Module: Bracken build
-    //
-    if ((!kmer_distrib_exists) | params.bracken_build ) {
-        BRACKEN_BUILD( 
-            ch_dbkraken,
-            params.bracken_readlength,
-            params.bracken_kmerlength
-        )
-        ch_dbbracken = BRACKEN_BUILD.out.bracken_db
-        ch_versions = ch_versions.mix(BRACKEN_BUILD.out.versions)
-    }
-    if (kmer_distrib_exists) {
-        ch_dbbracken = ch_dbkraken
-    }
 
     //
     // MODULE: Bracken
