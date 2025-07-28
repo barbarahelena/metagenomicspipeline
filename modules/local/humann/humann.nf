@@ -30,8 +30,8 @@ process HUMANN_HUMANN {
     def folder = unirefdatabase == "uniref90_ec_filtered_diamond" ? "uniref_filt" : unirefdatabase == "uniref90_diamond" ? "uniref" : "otherdb"
 
     """
-    BT2_DB=`find -L "${humann_db}/metaphlan_db_oct22" -name "*rev.1.bt2*" -exec dirname {} \\;`
-    BT2_DB_INDEX=`find -L "${humann_db}/metaphlan_db_oct22" -name "*.rev.1.bt2*" | sed 's/\\.rev.1.bt2.*\$//' | sed 's/.*\\///'`
+    BT2_DB=`find -L "${humann_db}/metaphlan_db" -name "*rev.1.bt2*" -exec dirname {} \\;`
+    BT2_DB_INDEX=`find -L "${humann_db}/metaphlan_db" -name "*.rev.1.bt2*" | sed 's/\\.rev.1.bt2.*\$//' | sed 's/.*\\///'`
 
     mkdir humann_results
     mkdir logs
@@ -52,9 +52,9 @@ process HUMANN_HUMANN {
         --o-log logs/${prefix}.log \\
         --threads $task.cpus \\
         --memory-use minimum \\
-        --protein-database $humann_db/$folder/uniref \\
+        --protein-database $humann_db/$folder \\
         --nucleotide-database $humann_db/chocophlan \\
-        --utility-database $humann_db/$folder/utility_mapping \\
+        --utility-database $humann_db/utility_mapping \\
         --metaphlan-options "--bowtie2db \$BT2_DB --index \$BT2_DB_INDEX -t rel_ab_w_read_stats" \\
         --remove-temp-output \\
         --verbose
