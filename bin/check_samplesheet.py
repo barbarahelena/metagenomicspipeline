@@ -66,19 +66,7 @@ class RowChecker:
         if duplicates and not mergeruns:
             raise AssertionError(f"Duplicate samples found: {', '.join(duplicates)}")
 
-def sniff_format(handle):
-    """
-    Sniff the format of the CSV file.
 
-    Args:
-        handle: A file handle.
-
-    Returns:
-        A csv.Dialect object.
-    """
-    sample = handle.read(1024)
-    handle.seek(0)
-    return csv.Sniffer().sniff(sample)
 
 def main(file_in, file_out, mergeruns):
     """
@@ -94,7 +82,7 @@ def main(file_in, file_out, mergeruns):
 
     # See https://docs.python.org/3.9/library/csv.html#id3 to read up on `newline=""`.
     with file_in.open(newline="") as in_handle:
-        reader = csv.DictReader(in_handle, dialect=sniff_format(in_handle))
+        reader = csv.DictReader(in_handle, delimiter=",")
         # Validate the existence of the expected header columns.
         if not required_columns.issubset(reader.fieldnames):
             req_cols = ", ".join(required_columns)
