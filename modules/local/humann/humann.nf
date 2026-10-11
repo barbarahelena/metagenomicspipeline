@@ -34,7 +34,7 @@ process HUMANN_HUMANN {
 
     mkdir humann_results
     mkdir logs
-    if [ "${meta.single_end}" == "True" ]; then
+    if [ "${meta.single_end}" == "true" ]; then
         cp ${reads} ${prefix}_concat.fastq.gz
     else
         cat ${reads[0]} ${reads[1]} > ${prefix}_concat.fastq.gz
@@ -62,7 +62,7 @@ process HUMANN_HUMANN {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        humann: 3.9
+        humann: 4.0.0a1
     END_VERSIONS
     """
 
@@ -78,7 +78,7 @@ process HUMANN_HUMANN {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        humann: 3.9
+        humann: 4.0.0a1
     END_VERSIONS
     """
 }

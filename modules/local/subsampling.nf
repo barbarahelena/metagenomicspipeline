@@ -21,7 +21,7 @@ process SUBSAMPLING {
     def subsample_n = subsamplelevel ? subsamplelevel : 20000000
     """
     echo "Calculating stats of unprocessed reads"
-    if [ "${meta.single_end}" == "True" ]; then
+    if [ "${meta.single_end}" == "true" ]; then
         noreads=\$(zcat ${reads} | awk '{s++}END{print s/4}')
         echo "Reads in : \$noreads" > "${prefix}_readcount.txt"
     else
@@ -36,7 +36,7 @@ process SUBSAMPLING {
 
     if (( \$(awk 'BEGIN {print ("'\$proportion'" < 1)}') )); then   
         echo "Downsampling reads"
-        if [ "${meta.single_end}" == "True" ]; then
+        if [ "${meta.single_end}" == "true" ]; then
             zcat ${reads} | seqkit sample -s 42 -p \$proportion -o ${prefix}_sample.fastq
             seqkit head ${prefix}_sample.fastq -n ${subsample_n} -o ${prefix}_subsampled.fastq.gz
             rm ${prefix}_sample.fastq
@@ -49,7 +49,7 @@ process SUBSAMPLING {
         fi
     else
         echo "Sample has less than ${subsample_n} reads, skipping subsampling"
-        if [ "${meta.single_end}" == "True" ]; then
+        if [ "${meta.single_end}" == "true" ]; then
             cp ${reads} ${prefix}_subsampled.fastq.gz
         else
             cp ${reads[0]} ${prefix}_1_subsampled.fastq.gz
