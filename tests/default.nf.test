@@ -1,0 +1,132 @@
+nextflow_pipeline {
+
+    name "metagenomicspipeline end-to-end"
+    script "../main.nf"
+    tag "pipeline"
+
+    // All output files, relative to the output directory, sorted. Left out: run-specific
+    // files in pipeline_info (timestamped reports, params dump), and MultiQC's data and plot
+    // folders, whose contents depend on the machine (plot export fails under emulation, e.g.
+    // Docker on Apple Silicon).
+    def outputFiles = { String dir ->
+        def root  = new File(dir).toPath()
+        def files = []
+        root.toFile().eachFileRecurse(groovy.io.FileType.FILES) { f ->
+            def rel = root.relativize(f.toPath()).toString()
+            if (!(rel ==~ /pipeline_info\/(execution_|pipeline_dag|params_).*/) && !(rel ==~ /multiqc\/multiqc_(data|plots)\/.*/)) {
+                files << rel
+            }
+        }
+        return files.sort()
+    }
+
+    // Species fractions estimated by Bracken, against the known mock community composition
+    // (assets/testdata/mock_composition.csv, renormalised to the species in the Kraken2 database).
+    // Returns a list of mismatches; empty when every estimate is within `tolerance`.
+    def compareToMock = { String bracken_table, String composition, double tolerance ->
+        def rows    = new File(composition).readLines()*.tokenize(',')
+        def header  = rows[0]
+        def in_db   = rows.drop(1).findAll { r -> r[2] == 'yes' }
+        def table   = new File(bracken_table).readLines()*.tokenize('\t')
+        def columns = table[0]
+        def errors  = []
+        header.drop(3).each { sample ->
+            def i_truth = header.indexOf(sample)
+            def i_frac  = columns.indexOf("${sample}.tsv_frac".toString())
+            def total   = in_db.sum { r -> r[i_truth] as double }
+            in_db.each { r ->
+                def expected = (r[i_truth] as double) / total
+                def row      = table.find { t -> t[1] == r[1] }
+                def observed = row ? row[i_frac] as double : 0.0
+                if (Math.abs(observed - expected) > tolerance) {
+                    errors << "${sample} ${r[0]}: expected ${expected.round(3)}, Bracken ${observed.round(3)}"
+                }
+            }
+        }
+        return errors
+    }
+
+    test("-profile test") {
+
+        when {
+            params {
+                outdir = "$outputDir"
+            }
+        }
+
+        then {
+            // Tables computed from the reads are the same on every run, so their checksums are
+            // part of the snapshot. Other files (gzipped reads, HTML reports, logs that mention
+            // run times or paths) by name only.
+            assertAll(
+                { assert workflow.success },
+                { assert snapshot(
+                    outputFiles(params.outdir),
+                    path("${params.outdir}/subsampling/readcounts_table.csv"),
+                    path("${params.outdir}/kraken2/GUT1.kraken2.report.txt"),
+                    path("${params.outdir}/kraken2/GUT2.kraken2.report.txt"),
+                    path("${params.outdir}/kraken2/GUT3.kraken2.report.txt"),
+                    path("${params.outdir}/bracken/GUT1.tsv"),
+                    path("${params.outdir}/bracken/GUT2.tsv"),
+                    path("${params.outdir}/bracken/GUT3.tsv"),
+                    path("${params.outdir}/bracken/combined_brackenoutput.txt"),
+                    path("${params.outdir}/bracken/combined_krakenoutput.txt")
+                ).match() },
+                // The profiles match the mock community the reads were simulated from
+                { assert compareToMock(
+                    "${params.outdir}/bracken/combined_brackenoutput.txt",
+                    "${projectDir}/assets/testdata/mock_composition.csv",
+                    0.05
+                ) == [] },
+                // Every tool reports a version through the 'versions' topic
+                { assert path("${params.outdir}/pipeline_info/software_versions.tsv").readLines().drop(1).every { line -> line.tokenize('\t').size() == 3 } }
+            )
+        }
+    }
+
+    test("-profile test -stub, all optional steps") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir                           = "$outputDir"
+                skip_metaphlan                   = false
+                skip_humann                      = false
+                skip_shortbred                   = false
+                bracken_build                    = true
+                save_trimmed_fail                = true
+                kraken2_save_reads               = true
+                kraken2_save_readclassifications = true
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert snapshot(outputFiles(params.outdir)).match() }
+            )
+        }
+    }
+
+    test("-profile test -stub, no preprocessing") {
+
+        options "-stub"
+
+        when {
+            params {
+                outdir             = "$outputDir"
+                skip_preprocessing = true
+                perform_runmerging = false
+                input              = "${projectDir}/assets/testdata/samplesheet_test_single.csv"
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert snapshot(outputFiles(params.outdir)).match() }
+            )
+        }
+    }
+}

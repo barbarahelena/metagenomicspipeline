@@ -1,45 +1,31 @@
+nextflow.enable.types = true
+
 process BRACKEN_COMBINEBRACKENOUTPUTS {
     label 'process_single'
 
     input:
-    path input
+    reports: List<Path>   // Bracken reports, one per sample
 
     output:
-    path("*.txt")               , emit: txt
-    path "versions.yml"         , emit: versions
+    file('*.txt')
 
-    when:
-    task.ext.when == null || task.ext.when
+    topic:
+    // combine_bracken_outputs.py ships with Bracken and has no version option of its own
+    tuple(task.process, 'bracken', eval('bracken -v | cut -f2 -d"v"')) >> 'versions'
 
     script:
-    def args = task.ext.args ?: ''
+    def args   = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "combined_brackenoutput"
-    // WARN: Version information not provided by tool on CLI.
-    // Please update version string below when bumping container versions.
-    def VERSION = '2.9'
     """
     combine_bracken_outputs.py \\
-        $args \\
-        --files ${input} \\
+        ${args} \\
+        --files ${reports.join(' ')} \\
         -o ${prefix}.txt
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        combine_bracken_output: ${VERSION}
-    END_VERSIONS
     """
 
     stub:
     def prefix = task.ext.prefix ?: "combined_brackenoutput"
-    // WARN: Version information not provided by tool on CLI.
-    // Please update version string below when bumping container versions.
-    def VERSION = '2.9'
     """
     touch ${prefix}.txt
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        combine_bracken_output: ${VERSION}
-    END_VERSIONS
     """
 }

@@ -7,3 +7,6 @@ testing/
 testing*
 *.pyc
 db
+.nf-test/
+.nf-test.log
+.nf-test-docker/

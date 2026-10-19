@@ -1,7 +1,9 @@
-//
-// Kraken subworkflow: kraken and bracken
-//
+nextflow.enable.types = true
 
+//
+// Kraken2 classification and Bracken abundance re-estimation
+//
+include { Reads; MetagenomicsOptions        } from './types'
 include { KRAKEN2_DB                        } from '../../modules/local/kraken2/db'
 include { KRAKEN2_KRAKEN2                   } from '../../modules/local/kraken2/kraken2'
 include { BRACKEN_BUILD                     } from '../../modules/local/bracken/build'
@@ -12,84 +14,59 @@ include { BRACKEN_COMBINEKRAKENOUTPUTS      } from '../../modules/local/bracken/
 workflow KRAKEN {
 
     take:
-    reads
-    kraken2_db
+    reads: Channel<Reads>
+    opts: MetagenomicsOptions
 
     main:
+    //
+    // Database: the one given with --kraken2_db, or download a prebuilt one (--kraken2_dbname)
+    //
+    def ch_dbkraken = opts.kraken2_db
+        ? channel.value(opts.kraken2_db)
+        : KRAKEN2_DB(opts.kraken2_dbname)
 
-    ch_versions = Channel.empty()
-    ch_multiqc_files = Channel.empty()
-    
-    if( !kraken2_db ) {
-        KRAKEN2_DB( params.kraken2_dbname )
-        ch_dbkraken = KRAKEN2_DB.out.db
-    } else {
-        ch_dbkraken = kraken2_db
-    }
-
-    if ( params.bracken_build || !kraken2_db ) {
-        // Only build if user requests it OR if we downloaded a new database that might not have kmer_distrib
-        if ( !kraken2_db ) {
-            // We downloaded the DB, so we should have kmer_distrib already
-            // Use the existing one unless user specifically wants to rebuild
-            if ( !params.bracken_build ) {
-                ch_dbbracken = ch_dbkraken  // Use the downloaded kmer_distrib
-            } else {
-                // User wants to rebuild anyway
-                BRACKEN_BUILD( 
-                    ch_dbkraken,
-                    params.bracken_readlength,
-                    params.bracken_kmerlength
-                )
-                ch_dbbracken = BRACKEN_BUILD.out.bracken_db
-                ch_versions = ch_versions.mix(BRACKEN_BUILD.out.versions)
-            }
-        } else {
-            // We have a pre-existing database, need to build kmer_distrib
-            BRACKEN_BUILD( 
-                ch_dbkraken,
-                params.bracken_readlength,
-                params.bracken_kmerlength
-            )
-            ch_dbbracken = BRACKEN_BUILD.out.bracken_db
-            ch_versions = ch_versions.mix(BRACKEN_BUILD.out.versions)
-        }
-    } else {
-        // Use the database as-is for Bracken
-        ch_dbbracken = ch_dbkraken
-    }
+    // The prebuilt databases include Bracken files for common read lengths.
+    // Build them only when asked (--bracken_build), e.g. for a custom database or another read length.
+    def ch_dbbracken = opts.bracken_build
+        ? BRACKEN_BUILD(ch_dbkraken, opts.bracken_readlength, opts.bracken_kmerlength)
+        : ch_dbkraken
 
     //
-    // MODULE: Kraken profiling
+    // MODULE: Kraken2 classification
     //
-    KRAKEN2_KRAKEN2 (
-        reads, 
-        ch_dbkraken, 
-        params.kraken2_save_reads, 
-        params.kraken2_save_readclassifications
+    def kraken = KRAKEN2_KRAKEN2(
+        reads,
+        ch_dbkraken,
+        opts.kraken2_save_reads,
+        opts.kraken2_save_readclassifications
     )
-    ch_versions        = ch_versions.mix( KRAKEN2_KRAKEN2.out.versions.first() )
-    ch_multiqc_files   = ch_multiqc_files.mix( KRAKEN2_KRAKEN2.out.report )
 
     //
-    // MODULE: Bracken
+    // MODULE: Bracken, and tables combining all samples
     //
-    BRACKEN_BRACKEN(
-        KRAKEN2_KRAKEN2.out.report, 
+    def bracken_results = BRACKEN_BRACKEN(   // not 'bracken': an emit name below
+        kraken.map { r -> record(id: r.id, report: r.report) },
         ch_dbbracken,
-        params.bracken_readlength,
-        params.bracken_threshold
-        )
-    ch_versions     = ch_versions.mix(BRACKEN_BRACKEN.out.versions.first())
-
-    ch_profiles_bracken = BRACKEN_BRACKEN.out.reports.collect {it[1]}
-    BRACKEN_COMBINEBRACKENOUTPUTS( ch_profiles_bracken )
-    ch_profiles_kraken = BRACKEN_BRACKEN.out.txt.collect { it[1] }
-    BRACKEN_COMBINEKRAKENOUTPUTS( ch_profiles_kraken )
+        opts.bracken_readlength,
+        opts.bracken_threshold
+    )
+    def combined_bracken = BRACKEN_COMBINEBRACKENOUTPUTS(
+        bracken_results.map { r -> r.report }.collect().map { files -> files.toSorted { a, b -> a.name <=> b.name } }
+    )
+    def combined_kraken = BRACKEN_COMBINEKRAKENOUTPUTS(
+        bracken_results.map { r -> r.txt }.collect().map { files -> files.toSorted { a, b -> a.name <=> b.name } }
+    )
 
     emit:
-    report = KRAKEN2_KRAKEN2.out.report                 // channel [ meta, Kraken report ]
-    mqc      = ch_multiqc_files                         // channel: multiqc files
-    versions = ch_versions                              // channel: [ versions.yml ]
+    report: Channel<Path>  = kraken.map { r -> r.report }
+    kraken2: Channel<Path> = channel.empty()
+        .mix(kraken.map { r -> r.report })
+        .mix(kraken.flatMap { r -> r.classified })
+        .mix(kraken.flatMap { r -> r.unclassified })
+        .mix(kraken.filter { r -> r.classifiedreads != null }.map { r -> r.classifiedreads })
+    bracken: Channel<Path> = channel.empty()
+        .mix(bracken_results.map { r -> r.report })
+        .mix(bracken_results.map { r -> r.txt })
+        .mix(combined_bracken)
+        .mix(combined_kraken)
 }
-

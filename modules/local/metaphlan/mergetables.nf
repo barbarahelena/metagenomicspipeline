@@ -1,30 +1,29 @@
+nextflow.enable.types = true
+
 process METAPHLAN_MERGETABLES {
     label 'process_medium'
     label 'metaphlan'
-    label 'metaphlan_publish'
 
     input:
-    path(profiles)
+    profiles: List<Path>
 
     output:
-    path "combined_table.txt"      , emit: txt
-    path "versions.yml"            , emit: versions
+    file('combined_table.txt')
 
-    when:
-    task.ext.when == null || task.ext.when
+    topic:
+    tuple(task.process, 'metaphlan', eval('metaphlan --version 2>&1 | awk \'{print $3}\'')) >> 'versions'
 
     script:
     def args = task.ext.args ?: ''
-    
     """
     merge_metaphlan_tables.py \\
-        $args \\
+        ${args} \\
         -o combined_table.txt \\
-        ${profiles}
+        ${profiles.join(' ')}
+    """
 
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        metaphlan: \$(metaphlan --version 2>&1 | awk '{print \$3}')
-    END_VERSIONS
+    stub:
+    """
+    touch combined_table.txt
     """
 }

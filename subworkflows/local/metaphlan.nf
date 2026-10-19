@@ -1,7 +1,9 @@
-//
-// Metaphlan: database download (stored process), metaphlan and merge metaphlan tables
-//
+nextflow.enable.types = true
 
+//
+// MetaPhlAn: database download (stored process), profiling and merged abundance table
+//
+include { Reads                             } from './types'
 include { METAPHLAN_MAKEDB                  } from '../../modules/local/metaphlan/makedb'
 include { METAPHLAN_METAPHLAN               } from '../../modules/local/metaphlan/metaphlan'
 include { METAPHLAN_MERGETABLES             } from '../../modules/local/metaphlan/mergetables'
@@ -9,40 +11,22 @@ include { METAPHLAN_MERGETABLES             } from '../../modules/local/metaphla
 workflow METAPHLAN {
 
     take:
-    reads
+    reads: Channel<Reads>
 
     main:
+    def db       = METAPHLAN_MAKEDB()
+    def metaphlan = METAPHLAN_METAPHLAN(reads, db)   // not 'profiles': an emit name below
 
-    ch_versions = Channel.empty()
-    ch_multiqc_files = Channel.empty()
-
-    //
-    // MODULE: Metaphlan database
-    //
-    METAPHLAN_MAKEDB ( )
-
-    //
-    // MODULE: Metaphlan profiling
-    //
-    METAPHLAN_METAPHLAN (
-        reads,
-        METAPHLAN_MAKEDB.out.db
+    // Sorted by file name, so the column order of the merged table is reproducible
+    def merged = METAPHLAN_MERGETABLES(
+        metaphlan.map { r -> r.profile }.collect().map { files -> files.toSorted { a, b -> a.name <=> b.name } }
     )
-    ch_versions        = ch_versions.mix( METAPHLAN_METAPHLAN.out.versions.first() )
-    ch_multiqc_files = ch_multiqc_files.mix( METAPHLAN_METAPHLAN.out.profile )
-    //
-    // MODULE: Metaphlan merge tables
-    //
-    ch_profiles_metaphlan = METAPHLAN_METAPHLAN.out.profile.collect {it[1]}
-
-    METAPHLAN_MERGETABLES ( ch_profiles_metaphlan )
-    ch_versions = ch_versions.mix( METAPHLAN_MERGETABLES.out.versions )
 
     emit:
-    profiles = METAPHLAN_METAPHLAN.out.profile  // channel [ meta, Metaphlan profile ]
-    database = METAPHLAN_MAKEDB.out.db          // channel [ Metaphlan database ]
-    sambz    = METAPHLAN_METAPHLAN.out.sambz    // channel [ meta, Metaphlan sambz ]
-    mqc      = ch_multiqc_files                 // channel: multiqc files
-    versions = ch_versions                      // channel: [ versions.yml ]
+    profiles: Channel<Path> = metaphlan.map { r -> r.profile }
+    results: Channel<Path>  = channel.empty()
+        .mix(metaphlan.map { r -> r.profile })
+        .mix(metaphlan.map { r -> r.sambz })
+        .mix(metaphlan.filter { r -> r.mapout != null }.map { r -> r.mapout })
+        .mix(merged)
 }
-

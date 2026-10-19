@@ -1,6 +1,9 @@
+nextflow.enable.types = true
+
 //
-// Preprocessing reads: fastp quality filtering and filtering out host reads
+// Preprocessing reads: FastQC, fastp quality filtering, host read removal, merging runs, subsampling
 //
+include { Sample; Reads; MetagenomicsOptions } from './types'
 include { FASTP                             } from '../../modules/local/fastp'
 include { FASTQC                            } from '../../modules/nf-core/fastqc/main'
 include { BOWTIE2_BUILD                     } from '../../modules/local/bowtie2/build'
@@ -11,110 +14,108 @@ include { CAT_READCOUNTS                    } from '../../modules/local/cat_read
 
 workflow PREPROCESSING {
     take:
-    reads
-    reference
-    bowtie2index
-    adapters
+    ch_samples: Channel<Sample>
+    opts: MetagenomicsOptions
 
     main:
-    ch_versions = Channel.empty()
-    ch_multiqc_files = Channel.empty()
+    //
+    // MODULE: FastQC on the raw reads. nf-core FastQC is untyped and expects tuple(meta, reads).
+    // (Local names must differ from the emit names below.)
+    //
+    def fastqc_results = FASTQC(ch_samples.map { s ->
+        tuple([id: s.run_accession ? "${s.id}_${s.run_accession}" : s.id, single_end: s.single_end], s.fastq)
+    })
 
-    FASTQC ( reads )
-    ch_versions = ch_versions.mix(FASTQC.out.versions.first())
-    
-    if(params.skip_preprocessing == false) {
-        if(params.skip_qualityfilter == false){
-            // Quality filtering, adapter trimming
-            FASTP (
-                reads, 
-                adapters,
-                params.save_trimmed_fail,
-                params.fastp_cutright,
-                params.fastp_windowsize, 
-                params.fastp_meanquality, 
-                params.fastp_length
-            )
-            ch_versions = ch_versions.mix( FASTP.out.versions.first() )
-            ch_multiqc_files = ch_multiqc_files.mix( FASTP.out.json )
-            ch_reads = FASTP.out.reads
-        } else {
-            ch_reads = reads
-        }
+    def ch_reads = ch_samples.map { s -> record(id: s.id, single_end: s.single_end, run_accession: s.run_accession, fastq: s.fastq) }
+    def ch_mqc          = channel.empty()
+    def ch_out_fastp    = channel.empty()
+    def ch_out_bowtie2  = channel.empty()
+    def ch_out_merged   = channel.empty()
+    def ch_out_subsampl = channel.empty()
 
-        // Remove human reads
-        if(params.skip_hostfilter == false){
-            if (!bowtie2index) {
-                // Build index of reference genome
-                BOWTIE2_BUILD ( reference )
-                ch_bowtie2_index = BOWTIE2_BUILD.out.index
-                ch_versions      = ch_versions.mix( BOWTIE2_BUILD.out.versions )
-            } else{
-                ch_bowtie2_index = bowtie2index
-            }
-            // Map, generate BAM with all reads and unmapped reads in fastq.gz for downstream
-            BOWTIE2_FILTERHOST ( 
-                ch_reads, 
-                ch_bowtie2_index
+    if (!opts.skip_preprocessing) {
+        //
+        // MODULE: fastp quality filtering, adapter trimming
+        //
+        if (!opts.skip_qualityfilter) {
+            def fastp = FASTP(
+                ch_reads,
+                opts.adapterlist,
+                opts.save_trimmed_fail,
+                opts.fastp_cutright,
+                opts.fastp_windowsize,
+                opts.fastp_meanquality,
+                opts.fastp_length
             )
-            ch_versions      = ch_versions.mix( BOWTIE2_FILTERHOST.out.versions.first() )
-            ch_multiqc_files = ch_multiqc_files.mix( BOWTIE2_FILTERHOST.out.log )
-            ch_reads = BOWTIE2_FILTERHOST.out.reads
+            ch_reads     = fastp.map { r -> record(id: r.id, single_end: r.single_end, run_accession: r.run_accession, fastq: r.fastq) }
+            ch_mqc       = ch_mqc.mix(fastp.map { r -> r.json })
+            ch_out_fastp = ch_out_fastp.mix(fastp.map { r -> r.log })
         }
 
         //
-    // MODULE: merge reads
-    //
-    if ( params.perform_runmerging ) {
-        ch_reads_for_cat_branch = ch_reads
-            .map {
-                meta, fastqs ->
-                    def meta_new = meta - meta.subMap('run_accession')
-                    [ meta_new, fastqs ]
-            }
-            .groupTuple()
-            .map {
-                meta, fastqs ->
-                    [ meta, fastqs.flatten() ]
-            }
-            .branch {
-                meta, fastqs ->
-                cat: ( meta.single_end && fastqs.size() > 1 ) || ( !meta.single_end && fastqs.size() > 2 )
-                skip: true
-            }
-
-        ch_reads_runmerged = MERGE_RUNS ( ch_reads_for_cat_branch.cat ).reads
-            .mix( ch_reads_for_cat_branch.skip )
-            .map {
-                meta, fastqs ->
-                [ meta, [ fastqs ].flatten() ]
-            }
-        ch_versions = ch_versions.mix(MERGE_RUNS.out.versions)
-    } else {
-        ch_reads_runmerged = ch_reads
-    }
-
-
-        // Subsampling reads
-        if(params.skip_subsampling == false){
-            SUBSAMPLING (
-                ch_reads_runmerged,
-                params.subsamplelevel
-            )
-            ch_versions = ch_versions.mix(SUBSAMPLING.out.versions.first())
-            ch_reads = SUBSAMPLING.out.reads
-            ch_logs = SUBSAMPLING.out.log.map{it[1]}.collect()
-            CAT_READCOUNTS ( ch_logs )
-        } else {
-            ch_reads = ch_reads_runmerged
+        // MODULE: remove host reads (Bowtie2); build the index from the reference when none is given
+        //
+        if (!opts.skip_hostfilter) {
+            def ch_index = opts.bowtie2_index
+                ? channel.value([ opts.bowtie2_index ])
+                : BOWTIE2_BUILD(opts.fasta)
+            def filtered = BOWTIE2_FILTERHOST(ch_reads, ch_index)
+            ch_reads       = filtered.map { r -> record(id: r.id, single_end: r.single_end, run_accession: r.run_accession, fastq: r.fastq) }
+            ch_mqc         = ch_mqc.mix(filtered.map { r -> r.log })
+            ch_out_bowtie2 = ch_out_bowtie2
+                .mix(filtered.flatMap { r -> r.fastq })
+                .mix(filtered.map { r -> r.log })
+                .mix(filtered.map { r -> r.stats })
         }
-    } else {
-        ch_reads = reads
     }
-    
+
+    //
+    // MODULE: merge the runs of a sample (one samplesheet row per run, same sample id)
+    //
+    def ch_merged: Channel<Reads> = ch_reads.map { r -> record(id: r.id, single_end: r.single_end, fastq: r.fastq) }
+    if (!opts.skip_preprocessing && opts.perform_runmerging) {
+        // Sort the runs of a sample so the order of reads in the merged file does not depend on task order
+        def ch_runs = ch_reads
+            .map { r -> tuple(r.id, r) }
+            .groupBy()
+            .map { id, runs ->
+                def sorted = runs.toSorted { a, b -> (a.run_accession ?: '') <=> (b.run_accession ?: '') }
+                tuple(id, sorted[0].single_end, sorted.size(), sorted.collectMany { r -> r.fastq }.toList())
+            }
+        def merged = MERGE_RUNS(
+            ch_runs
+                .filter { _id, _se, n, _fastq -> n > 1 }
+                .map { id, se, _n, fastq -> record(id: id, single_end: se, fastq: fastq) }
+        )
+        ch_merged = ch_runs
+            .filter { _id, _se, n, _fastq -> n == 1 }
+            .map { id, se, _n, fastq -> record(id: id, single_end: se, fastq: fastq) }
+            .mix(merged)
+        ch_out_merged = merged.flatMap { r -> r.fastq }
+    }
+
+    //
+    // MODULE: subsample reads to an equal depth; table of read counts before subsampling
+    //
+    def ch_out_reads: Channel<Reads> = ch_merged
+    if (!opts.skip_preprocessing && !opts.skip_subsampling) {
+        def subsampled = SUBSAMPLING(ch_merged, opts.subsamplelevel)
+        ch_out_reads = subsampled.map { r -> record(id: r.id, single_end: r.single_end, fastq: r.fastq) }
+        def readcounts = CAT_READCOUNTS(
+            subsampled.map { r -> r.readcount }.collect().map { files -> files.toSorted { a, b -> a.name <=> b.name } }
+        )
+        ch_out_subsampl = channel.empty()
+            .mix(subsampled.map { r -> r.readcount })
+            .mix(readcounts)
+    }
+
     emit:
-    reads    = ch_reads                     // channel: [ val(meta), [ fastq.gz,fastq.gz ] ]
-    fastqc1  = FASTQC.out.zip               // channel: fastqc zips (unprocessed)
-    versions = ch_versions                  // channel: [ versions.yml ]
-    mqc      = ch_multiqc_files             // channel: multiqc files
+    reads: Channel<Reads>       = ch_out_reads
+    fastqc_zip: Channel<Path>   = fastqc_results.zip.flatMap { _meta, zips -> [ zips ].flatten() }   // one file (single-end) or a list
+    fastqc: Channel<Path>       = fastqc_results.html.mix(fastqc_results.zip).flatMap { _meta, files -> [ files ].flatten() }
+    mqc: Channel<Path>          = ch_mqc
+    fastp: Channel<Path>        = ch_out_fastp
+    bowtie2: Channel<Path>      = ch_out_bowtie2
+    merged: Channel<Path>       = ch_out_merged
+    subsampling: Channel<Path>  = ch_out_subsampl
 }

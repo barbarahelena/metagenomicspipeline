@@ -1,36 +1,28 @@
+nextflow.enable.types = true
+
 process CAT_READCOUNTS {
     label 'process_single'
-    
+
     input:
-    path readcounts
+    readcounts: List<Path>   // *_readcount.txt, one per sample
 
     output:
-    path "*.csv"                , emit: readcounts
-    path "versions.yml"         , emit: versions
+    file('*.csv')
 
-    when:
-    task.ext.when == null || task.ext.when
+    topic:
+    // GNU awk knows --version, mawk (Ubuntu's default) only -W version
+    tuple(task.process, 'awk', eval('{ awk --version 2>/dev/null || awk -W version 2>&1; } | head -n 1')) >> 'versions'
 
     script:
     def prefix = task.ext.prefix ?: "readcounts_table"
     """
-    # Output file
     output_file="${prefix}.csv"
-
-    # Write the header to the output file
     echo "SampleID,ReadCount" > \$output_file
 
-    # Iterate through all *_readcount.txt files in the folder
-    for file in ${readcounts}; do
-        # Extract the sampleID from the filename
+    for file in ${readcounts.join(' ')}; do
         sampleID=\$(basename "\$file" _readcount.txt)
-        
-        # Extract the readcount from the file content
         readcount=\$(grep "Reads in" "\$file" | awk '{print \$4}')
-        
-        # Check if readcount is not empty
         if [ -n "\$readcount" ]; then
-            # Append the sampleID and readcount to the output file
             echo "\$sampleID,\$readcount" >> \$output_file
         else
             echo "Warning: No read count found in \$file"
@@ -38,11 +30,11 @@ process CAT_READCOUNTS {
     done
 
     echo "Readcounts table created: \$output_file"
+    """
 
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        awk: \$(awk --version 2>&1 | head -n 1 | cut -d ' ' -f 3)
-    END_VERSIONS
-
+    stub:
+    def prefix = task.ext.prefix ?: "readcounts_table"
+    """
+    touch ${prefix}.csv
     """
 }

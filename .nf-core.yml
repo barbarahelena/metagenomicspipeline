@@ -1,6 +1,7 @@
+# Used by nf-core/tools to install and update the nf-core modules and subworkflows (modules.json)
 repository_type: pipeline
 template:
   author: barbarahelena
-  description: shotgun metagenomics pipeline to obtain relative abundances, pathway
-    abundances and strain-sharing using biobakery software
+  description: shotgun metagenomics pipeline to obtain relative abundances and pathway
+    abundances
   name: metagenomicspipeline
