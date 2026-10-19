@@ -4,14 +4,16 @@ nextflow_pipeline {
     script "../main.nf"
     tag "pipeline"
 
-    // All output files, relative to the output directory, sorted. Run-specific
-    // files in pipeline_info (timestamped reports, params dump) are left out.
+    // All output files, relative to the output directory, sorted. Left out: run-specific
+    // files in pipeline_info (timestamped reports, params dump), and MultiQC's data and plot
+    // folders, whose contents depend on the machine (plot export fails under emulation, e.g.
+    // Docker on Apple Silicon).
     def outputFiles = { String dir ->
         def root  = new File(dir).toPath()
         def files = []
         root.toFile().eachFileRecurse(groovy.io.FileType.FILES) { f ->
             def rel = root.relativize(f.toPath()).toString()
-            if (!(rel ==~ /pipeline_info\/(execution_|pipeline_dag|params_).*/) && !rel.startsWith('multiqc/multiqc_data/')) {
+            if (!(rel ==~ /pipeline_info\/(execution_|pipeline_dag|params_).*/) && !(rel ==~ /multiqc\/multiqc_(data|plots)\/.*/)) {
                 files << rel
             }
         }
