@@ -1,10 +1,10 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema",
-    "$id": "https://raw.githubusercontent.com/nf-core/metagenomicspipeline/master/nextflow_schema.json",
-    "title": "nf-core/metagenomicspipeline pipeline parameters",
-    "description": "shotgun metagenomics pipeline to obtain relative abundances, pathway abundances and strain-sharing using biobakery software",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://raw.githubusercontent.com/barbarahelena/metagenomicspipeline/main/nextflow_schema.json",
+    "title": "barbarahelena/metagenomicspipeline pipeline parameters",
+    "description": "shotgun metagenomics pipeline to obtain relative abundances and pathway abundances",
     "type": "object",
-    "definitions": {
+    "$defs": {
         "input_output_options": {
             "title": "Input/output options",
             "type": "object",
@@ -22,8 +22,9 @@
                     "mimetype": "text/csv",
                     "pattern": "^\\S+\\.csv$",
                     "description": "Path to comma-separated file containing information about the samples in the experiment.",
-                    "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row. See [usage docs](https://nf-co.re/metagenomicspipeline/usage#samplesheet-input).",
-                    "fa_icon": "fas fa-vials"
+                    "help_text": "A comma-separated file with a header row and the columns `sample`, `fastq_1`, `fastq_2` (empty for single-end reads) and optionally `run_accession`. A sample sequenced in several runs gets one row per run, with the same `sample` and a different `run_accession`; use `--perform_runmerging` to merge them. Relative paths are read relative to the launch directory, or else relative to the samplesheet's folder.",
+                    "fa_icon": "fas fa-vials",
+                    "schema": "assets/schema_input.json"
                 },
                 "outdir": {
                     "type": "string",
@@ -43,22 +44,14 @@
                     "description": "MultiQC report title. Printed as page header, used for filename if not otherwise specified.",
                     "fa_icon": "fas fa-file-signature"
                 }
-            },
-            "help_text": ""
+            }
         },
         "reference_genome_options": {
             "title": "Reference genome options",
             "type": "object",
             "fa_icon": "fas fa-asterisk",
-            "description": "Reference genome related files and options required for the workflow.",
+            "description": "Reference genome for removing host reads: give --fasta, --bowtie2_index or --genome.",
             "properties": {
-                "igenomes_ignore": {
-                    "type": "boolean",
-                    "description": "Do not load the iGenomes reference config.",
-                    "fa_icon": "fas fa-ban",
-                    "hidden": true,
-                    "help_text": "Do not load `igenomes.config` when running the pipeline. You may choose this option if you observe clashes between custom parameters and those supplied in `igenomes.config`."
-                },
                 "genome": {
                     "type": "string",
                     "description": "Name of iGenomes reference.",
@@ -70,100 +63,151 @@
                 },
                 "fasta": {
                     "type": "string",
-                    "fa_icon": "fas fa-file-alt"
-                },
-                "bowtie2": {
-                    "type": "string",
-                    "format": "directory-path",
-                    "fa_icon": "fas fa-forward"
+                    "fa_icon": "fas fa-font",
+                    "format": "file-path",
+                    "exists": true,
+                    "description": "Path to the host reference genome FASTA, used to build a Bowtie2 index for removing host reads."
                 },
                 "bowtie2_index": {
                     "type": "string",
                     "format": "directory-path",
-                    "fa_icon": "fas fa-forward"
-                }                
+                    "fa_icon": "fas fa-bezier-curve",
+                    "exists": true,
+                    "description": "Path to a directory with a prebuilt Bowtie2 index (*.bt2) of the host genome. Takes precedence over --fasta."
+                },
+                "igenomes_base": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "The base path to the igenomes reference files",
+                    "fa_icon": "fas fa-ban",
+                    "hidden": true,
+                    "default": "s3://ngi-igenomes/igenomes"
+                },
+                "igenomes_ignore": {
+                    "type": "boolean",
+                    "description": "Do not load the iGenomes reference config.",
+                    "fa_icon": "fas fa-ban",
+                    "hidden": true,
+                    "help_text": "Do not load `igenomes.config` when running the pipeline. You may choose this option if you observe clashes between custom parameters and those supplied in `igenomes.config`.",
+                    "default": false
+                }
             }
         },
         "skip_options": {
             "title": "Skip options",
             "type": "object",
+            "fa_icon": "fas fa-forward",
             "description": "",
-            "default": "",
             "properties": {
                 "skip_preprocessing": {
                     "type": "boolean",
-                    "fa_icon": "fas fa-forward"
+                    "fa_icon": "fas fa-forward",
+                    "default": false,
+                    "description": "Skip all preprocessing (quality filtering, host read removal, run merging, subsampling); FastQC still runs."
                 },
                 "skip_qualityfilter": {
                     "type": "boolean",
-                    "fa_icon": "fas fa-forward"
+                    "fa_icon": "fas fa-forward",
+                    "default": false,
+                    "description": "Skip quality filtering and adapter trimming with fastp."
                 },
                 "skip_hostfilter": {
                     "type": "boolean",
-                    "fa_icon": "fas fa-forward"
+                    "fa_icon": "fas fa-forward",
+                    "default": false,
+                    "description": "Skip host read removal with Bowtie2."
                 },
                 "skip_subsampling": {
                     "type": "boolean",
-                    "fa_icon": "fas fa-forward"
+                    "fa_icon": "fas fa-forward",
+                    "default": false,
+                    "description": "Skip subsampling of the reads to --subsamplelevel."
                 },
                 "skip_metaphlan": {
                     "type": "boolean",
-                    "fa_icon": "fas fa-forward"
+                    "fa_icon": "fas fa-forward",
+                    "default": false,
+                    "description": "Skip taxonomic profiling with MetaPhlAn."
                 },
                 "skip_humann": {
                     "type": "boolean",
-                    "fa_icon": "fas fa-forward"
+                    "fa_icon": "fas fa-forward",
+                    "default": false,
+                    "description": "Skip functional profiling with HUMAnN."
                 },
                 "skip_kraken": {
                     "type": "boolean",
+                    "fa_icon": "fas fa-forward",
+                    "default": true,
+                    "description": "Skip taxonomic classification with Kraken2 and Bracken (skipped by default; use --skip_kraken false to run it)."
+                },
+                "skip_shortbred": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Skip ShortBRED quantification of antibiotic resistance genes (CARD markers; skipped by default).",
                     "fa_icon": "fas fa-forward"
                 }
-            },
-            "fa_icon": "fas fa-forward"
+            }
         },
         "preprocessing_of_reads": {
             "title": "Preprocessing of reads",
             "type": "object",
+            "fa_icon": "fas fa-cogs",
             "description": "",
-            "default": "",
             "properties": {
                 "adapterlist": {
                     "type": "string",
-                    "fa_icon": "fas fa-forward"
+                    "fa_icon": "fas fa-forward",
+                    "format": "file-path",
+                    "exists": true,
+                    "description": "FASTA file with adapter sequences for fastp. Without it, fastp detects adapters itself."
                 },
                 "save_trimmed_fail": {
                     "type": "boolean",
-                    "fa_icon": "fas fa-forward"
+                    "fa_icon": "fas fa-forward",
+                    "default": false,
+                    "description": "Keep the reads that fail fastp filtering (in the fastp task folder)."
                 },
                 "fastp_cutright": {
                     "type": "boolean",
                     "default": true,
-                    "fa_icon": "fas fa-cut"
+                    "fa_icon": "fas fa-cut",
+                    "description": "Trim reads from the 3' end with a sliding window (fastp --cut_right)."
                 },
                 "fastp_windowsize": {
                     "type": "integer",
                     "default": 4,
-                    "fa_icon": "far fa-window-maximize"
+                    "fa_icon": "far fa-window-maximize",
+                    "description": "Sliding window size for --fastp_cutright (fastp --cut_window_size)."
                 },
                 "fastp_meanquality": {
                     "type": "integer",
                     "default": 15,
-                    "fa_icon": "fas fa-sort-numeric-up"
+                    "fa_icon": "fas fa-sort-numeric-up",
+                    "description": "Mean quality the sliding window must reach (fastp --cut_mean_quality)."
                 },
                 "fastp_length": {
                     "type": "integer",
                     "default": 70,
-                    "fa_icon": "fas fa-ruler"
+                    "fa_icon": "fas fa-ruler",
+                    "description": "Minimum read length after trimming; shorter reads are discarded (fastp --length_required)."
+                },
+                "perform_runmerging": {
+                    "type": "boolean",
+                    "default": false,
+                    "fa_icon": "fas fa-object-group",
+                    "description": "Merge the runs of a sample (samplesheet rows with the same sample name) after host read removal."
                 },
                 "subsamplelevel": {
-                    "type": "number",
-                    "default": 20000000.0,
-                    "fa_icon": "fas fa-forward"
+                    "type": "integer",
+                    "default": 20000000,
+                    "fa_icon": "fas fa-forward",
+                    "description": "Number of reads (pairs) to subsample each sample to. Samples with fewer reads are kept as they are."
                 },
                 "publish_mergedreads": {
                     "type": "string",
                     "default": "symlink",
-                    "description": "Method used to save merged reads to output directory.",
+                    "description": "How host-filtered and merged reads are saved to the output directory. They are large, so they are symlinked to the work directory by default.",
                     "fa_icon": "fas fa-forward",
                     "enum": [
                         "symlink",
@@ -174,19 +218,18 @@
                         "move"
                     ]
                 }
-            },
-            "fa_icon": "fas fa-cogs"
+            }
         },
         "profiling_options": {
             "title": "Profiling options",
             "type": "object",
+            "fa_icon": "fas fa-viruses",
             "description": "",
-            "default": "",
             "properties": {
                 "humann_db": {
                     "type": "string",
                     "fa_icon": "fas fa-database",
-                    "description": "Which uniref database to use",
+                    "description": "UniRef protein database for HUMAnN: uniref90_ec_filtered_diamond, uniref90_diamond, uniref50_diamond or uniref50_ec_filtered_diamond.",
                     "default": "uniref90_ec_filtered_diamond",
                     "enum": [
                         "uniref90_diamond",
@@ -199,79 +242,72 @@
                 "kraken2_db": {
                     "type": "string",
                     "fa_icon": "fas fa-database",
-                    "description": "path to kraken database",
-                    "help_text": ""
+                    "description": "Path to a Kraken2 database folder. When not given, the prebuilt database --kraken2_dbname is downloaded.",
+                    "format": "directory-path",
+                    "exists": true
                 },
                 "kraken2_dbname": {
                     "type": "string",
                     "fa_icon": "fas fa-database",
-                    "description": "Name of Kraken2 database to download",
-                    "default": "standard_64gb",
+                    "description": "Prebuilt Kraken2 database to download when --kraken2_db is not given.",
+                    "default": "standard_16gb",
                     "enum": [
+                        "core_nt",
                         "standard_64gb",
                         "standard_16gb",
-                        "standard_8gb",
-                        "core_nt",
-                        "custom"
-                    ],
-                    "help_text": ""
+                        "standard_8gb"
+                    ]
                 },
                 "kraken2_save_reads": {
                     "type": "boolean",
                     "fa_icon": "fas fa-database",
-                    "description": "",
-                    "help_text": ""
+                    "description": "Save the classified and unclassified reads from Kraken2.",
+                    "default": false
                 },
                 "kraken2_save_readclassifications": {
                     "type": "boolean",
                     "fa_icon": "fas fa-database",
-                    "description": "",
-                    "help_text": ""
-                },
-                "kraken2_save_minimizers": {
-                    "type": "boolean",
-                    "fa_icon": "fas fa-database",
-                    "description": "",
-                    "help_,text": ""
-                },
-                "bracken_readlength": {
-                    "type": "integer",
-                    "fa_icon": "fas fa-database",
-                    "description": "The read length used for Bracken, default 150",
-                    "help_text": ""
+                    "description": "Save the Kraken2 classification of every read.",
+                    "default": false
                 },
                 "bracken_build": {
                     "type": "boolean",
                     "fa_icon": "fas fa-database",
-                    "description": "Build the Bracken database, even if one exists in kraken_db path",
-                    "help_text": ""
+                    "description": "Build the Bracken files for --bracken_readlength (bracken-build), e.g. for a custom Kraken2 database. The prebuilt databases include them for common read lengths.",
+                    "default": false
+                },
+                "bracken_readlength": {
+                    "type": "integer",
+                    "fa_icon": "fas fa-database",
+                    "description": "Read length for Bracken; the database needs a matching database<length>mers.kmer_distrib file.",
+                    "default": 150
                 },
                 "bracken_kmerlength": {
                     "type": "integer",
                     "fa_icon": "fas fa-database",
-                    "description": "The kmer length used for Bracken, default 35",
-                    "default": 35,
-                    "help_text": ""
+                    "description": "k-mer length for bracken-build (--bracken_build).",
+                    "default": 35
                 },
                 "bracken_threshold": {
-                    "type": "number",
+                    "type": "integer",
                     "fa_icon": "fas fa-database",
-                    "description": "The number of reads used as threshold used for Bracken, default 10",
-                    "default": 10,
-                    "help_text": ""
+                    "description": "Minimum number of reads a taxon needs before Bracken re-estimates its abundance.",
+                    "default": 10
                 }
-            },
-            "fa_icon": "fas fa-viruses"
+            }
         },
         "generic_options": {
             "title": "Generic options",
             "type": "object",
-            "fa_icon": "fas fa-wrench",
+            "fa_icon": "fas fa-file-import",
             "description": "Less common options for the pipeline, typically set in a config file.",
-            "help_text": "These options are common to all nf-core pipelines and allow you to customise some of the core preferences for how the pipeline runs.\n\nTypically these options would be set in a Nextflow config file loaded for all pipeline runs, such as `~/.nextflow/config`.",
+            "help_text": "Options that change how the pipeline runs, rather than what it computes.\n\nTypically these options would be set in a Nextflow config file loaded for all pipeline runs, such as `~/.nextflow/config`.",
             "properties": {
                 "help": {
-                    "type": "boolean",
+                    "type": [
+                        "boolean",
+                        "string"
+                    ],
                     "description": "Display help text.",
                     "fa_icon": "fas fa-question-circle",
                     "hidden": true
@@ -280,7 +316,8 @@
                     "type": "boolean",
                     "description": "Display version and exit.",
                     "fa_icon": "fas fa-question-circle",
-                    "hidden": true
+                    "hidden": true,
+                    "default": false
                 },
                 "publish_dir_mode": {
                     "type": "string",
@@ -310,7 +347,8 @@
                     "type": "boolean",
                     "description": "Send plain-text email instead of HTML.",
                     "fa_icon": "fas fa-remove-format",
-                    "hidden": true
+                    "hidden": true,
+                    "default": false
                 },
                 "max_multiqc_email_size": {
                     "type": "string",
@@ -324,13 +362,13 @@
                     "type": "boolean",
                     "description": "Do not use coloured log outputs.",
                     "fa_icon": "fas fa-palette",
-                    "hidden": true
+                    "hidden": true,
+                    "default": false
                 },
-                "hook_url": {
+                "trace_report_suffix": {
                     "type": "string",
-                    "description": "Incoming hook URL for messaging service",
-                    "fa_icon": "fas fa-people-group",
-                    "help_text": "Incoming hook URL for messaging service. Currently, MS Teams and Slack are supported.",
+                    "description": "Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss.",
+                    "fa_icon": "far calendar",
                     "hidden": true
                 },
                 "multiqc_config": {
@@ -344,12 +382,14 @@
                     "type": "string",
                     "description": "Custom logo file to supply to MultiQC. File name must also be set in the MultiQC config file",
                     "fa_icon": "fas fa-image",
-                    "hidden": true
+                    "hidden": true,
+                    "format": "file-path"
                 },
                 "multiqc_methods_description": {
                     "type": "string",
                     "description": "Custom MultiQC yaml file containing HTML including a methods description.",
-                    "fa_icon": "fas fa-cog"
+                    "fa_icon": "fas fa-cog",
+                    "format": "file-path"
                 },
                 "validate_params": {
                     "type": "boolean",
@@ -358,61 +398,19 @@
                     "fa_icon": "fas fa-check-square",
                     "hidden": true
                 },
-                "validationShowHiddenParams": {
+                "help_full": {
                     "type": "boolean",
-                    "fa_icon": "far fa-eye-slash",
-                    "description": "Show all params when using `--help`",
+                    "description": "Display the full detailed help message.",
+                    "fa_icon": "fas fa-question-circle",
                     "hidden": true,
-                    "help_text": "By default, parameters set as _hidden_ in the schema are not shown on the command line when a user runs with `--help`. Specifying this option will tell the pipeline to show all parameters."
+                    "default": false
                 },
-                "validationFailUnrecognisedParams": {
+                "show_hidden": {
                     "type": "boolean",
-                    "fa_icon": "far fa-check-circle",
-                    "description": "Validation of parameters fails when an unrecognised parameter is found.",
+                    "description": "Display hidden parameters in the help message (only works when --help or --help_full are provided).",
+                    "fa_icon": "fas fa-eye-slash",
                     "hidden": true,
-                    "help_text": "By default, when an unrecognised parameter is found, it returns a warinig."
-                },
-                "validationLenientMode": {
-                    "type": "boolean",
-                    "fa_icon": "far fa-check-circle",
-                    "description": "Validation of parameters in lenient more.",
-                    "hidden": true,
-                    "help_text": "Allows string values that are parseable as numbers or booleans. For further information see [JSONSchema docs](https://github.com/everit-org/json-schema#lenient-mode)."
-                }
-            }
-        },
-        "max_job_request_options": {
-            "title": "Max job request options",
-            "type": "object",
-            "fa_icon": "fas fa-compress",
-            "description": "Set the top limit for requested resources for any single job.",
-            "help_text": "If you are running on a smaller system, a pipeline step requesting more resources than are available may cause the Nextflow to stop the run with an error. These options allow you to cap the maximum resources requested by any single job so that the pipeline will run on your system.\n\nNote that you can not _increase_ the resources requested by any job using these options. For that you will need your own configuration file. See [the nf-core website](https://nf-co.re/usage/configuration) for details.",
-            "properties": {
-                "max_cpus": {
-                    "type": "integer",
-                    "description": "Maximum number of CPUs that can be requested for any single job.",
-                    "default": 16,
-                    "fa_icon": "fas fa-microchip",
-                    "hidden": true,
-                    "help_text": "Use to set an upper-limit for the CPU requirement for each process. Should be an integer e.g. `--max_cpus 1`"
-                },
-                "max_memory": {
-                    "type": "string",
-                    "description": "Maximum amount of memory that can be requested for any single job.",
-                    "default": "128.GB",
-                    "fa_icon": "fas fa-memory",
-                    "pattern": "^\\d+(\\.\\d+)?\\.?\\s*(K|M|G|T)?B$",
-                    "hidden": true,
-                    "help_text": "Use to set an upper-limit for the memory requirement for each process. Should be a string in the format integer-unit e.g. `--max_memory '8.GB'`"
-                },
-                "max_time": {
-                    "type": "string",
-                    "description": "Maximum amount of time that can be requested for any single job.",
-                    "default": "240.h",
-                    "fa_icon": "far fa-clock",
-                    "pattern": "^(\\d+\\.?\\s*(s|m|h|d|day)\\s*)+$",
-                    "hidden": true,
-                    "help_text": "Use to set an upper-limit for the time requirement for each process. Should be a string in the format integer-unit e.g. `--max_time '2.h'`"
+                    "default": false
                 }
             }
         },
@@ -467,37 +465,25 @@
     },
     "allOf": [
         {
-            "$ref": "#/definitions/input_output_options"
+            "$ref": "#/$defs/input_output_options"
         },
         {
-            "$ref": "#/definitions/reference_genome_options"
+            "$ref": "#/$defs/reference_genome_options"
         },
         {
-            "$ref": "#/definitions/skip_options"
+            "$ref": "#/$defs/skip_options"
         },
         {
-            "$ref": "#/definitions/preprocessing_of_reads"
+            "$ref": "#/$defs/preprocessing_of_reads"
         },
         {
-            "$ref": "#/definitions/profiling_options"
+            "$ref": "#/$defs/profiling_options"
         },
         {
-            "$ref": "#/definitions/generic_options"
+            "$ref": "#/$defs/generic_options"
         },
         {
-            "$ref": "#/definitions/max_job_request_options"
-        },
-        {
-            "$ref": "#/definitions/institutional_config_options"
+            "$ref": "#/$defs/institutional_config_options"
         }
-    ],
-    "properties": {
-        "skip_shortbred": {
-            "type": "boolean",
-            "default": true
-        },
-        "perform_runmerging": {
-            "type": "boolean"
-        }
-    }
+    ]
 }

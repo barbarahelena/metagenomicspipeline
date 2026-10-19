@@ -1,55 +1,29 @@
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    PRINT PARAMS SUMMARY
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-
-include { paramsSummaryLog; paramsSummaryMap } from 'plugin/nf-validation'
-
-def logo = NfcoreTemplate.logo(workflow, params.monochrome_logs)
-def citation = '\n' + WorkflowMain.citation(workflow) + '\n'
-def summary_params = paramsSummaryMap(workflow)
-
-// Print parameter summary log to screen
-log.info logo + paramsSummaryLog(workflow) + citation
-
-WorkflowMetagenomicspipeline.initialise(params, log)
+nextflow.enable.types = true
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    CONFIG FILES
+    IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-ch_multiqc_config          = Channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
-ch_multiqc_custom_config   = params.multiqc_config ? Channel.fromPath( params.multiqc_config, checkIfExists: true ) : Channel.empty()
-ch_multiqc_logo            = params.multiqc_logo   ? Channel.fromPath( params.multiqc_logo, checkIfExists: true ) : Channel.empty()
-ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
+include { paramsSummaryMap          } from 'plugin/nf-schema'
+include { paramsSummaryMultiqc      } from '../subworkflows/nf-core/utils_nfcore_pipeline'
+include { workflowVersionToYAML     } from '../subworkflows/nf-core/utils_nfcore_pipeline'
+include { methodsDescriptionText    } from '../subworkflows/local/utils_metagenomicspipeline_pipeline'
+include { gitCommitHash             } from '../subworkflows/local/utils_metagenomicspipeline_pipeline'
+include { Sample; MetagenomicsOptions } from '../subworkflows/local/types'
 
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    IMPORT LOCAL MODULES/SUBWORKFLOWS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
-include { METAPHLAN                         } from '../subworkflows/local/metaphlan'
-include { KRAKEN                            } from '../subworkflows/local/kraken'
-include { HUMANN                            } from '../subworkflows/local/humann'
-include { SHORTBRED                         } from '../subworkflows/local/shortbred'
-include { CUSTOM_DUMPSOFTWAREVERSIONS       } from '../modules/local/dumpsoftwareversions/main'
 //
-// SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
+// SUBWORKFLOW: local subworkflows
 //
-include { INPUT_CHECK                       } from '../subworkflows/local/input_check'
 include { PREPROCESSING                     } from '../subworkflows/local/preprocessing'
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    IMPORT NF-CORE MODULES/SUBWORKFLOWS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
+include { METAPHLAN                         } from '../subworkflows/local/metaphlan'
+include { HUMANN                            } from '../subworkflows/local/humann'
+include { KRAKEN                            } from '../subworkflows/local/kraken'
+include { SHORTBRED                         } from '../subworkflows/local/shortbred'
 
 //
-// MODULE: Installed directly from nf-core/modules
+// MODULE: nf-core modules
 //
 include { MULTIQC                           } from '../modules/nf-core/multiqc/main'
 
@@ -59,150 +33,143 @@ include { MULTIQC                           } from '../modules/nf-core/multiqc/m
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-// Info required for completion email and summary
-def multiqc_report = []
+workflow METAGENOMICSPIPELINE {
 
-def getGenomeAttribute(attribute) {
-    if (params.genomes && params.genome && params.genomes.containsKey(params.genome)) {
-        if (params.genomes[params.genome].containsKey(attribute)) {
-            return params.genomes[params.genome][attribute]
-        }
-    }
-    return null
-}
+    take:
+    ch_samples: Channel<Sample>
+    opts: MetagenomicsOptions
 
-workflow METAGEN {
-    ch_adapterlist = params.adapterlist ? file(params.adapterlist) : []
-    ch_reference = params.fasta ? file(params.fasta) :
-                    params.genome ? getGenomeAttribute('fasta') : []
-    ch_kraken_db = params.kraken2_db ? file(params.kraken2_db) : []
-    ch_humann_db = params.humann_db ? params.humann_db : []
-    ch_bowtie2_index = params.bowtie2_index ? file(params.bowtie2_index) : 
-                    params.genome ? getGenomeAttribute('bowtie2') : []
-    ch_versions = Channel.empty()
+    main:
+    //
+    // SUBWORKFLOW: preprocessing of reads (quality filter, host read filtering, run merging, subsampling)
+    //
+    def prep     = PREPROCESSING(ch_samples, opts)
+    def ch_reads = prep.reads
+    def ch_mqc   = channel.empty().mix(prep.fastqc_zip).mix(prep.mqc)
 
     //
-    // SUBWORKFLOW: Read in samplesheet, validate and stage input files
+    // SUBWORKFLOW: MetaPhlAn
     //
-    INPUT_CHECK ( file(params.input) )
-    ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
-    //
-    // SUBWORKFLOW: preprocessing of reads (quality filter, host read filtering, subsampling)
-    //
-    PREPROCESSING (
-        INPUT_CHECK.out.reads,
-        ch_reference,
-        ch_bowtie2_index,
-        ch_adapterlist
-    )
-    ch_versions = ch_versions.mix(PREPROCESSING.out.versions)
-    
-    //
-    // SUBWORKFLOW: Metaphlan
-    //    
-    if( params.skip_metaphlan == false ) {
-        METAPHLAN ( PREPROCESSING.out.reads )
-        ch_versions = ch_versions.mix(METAPHLAN.out.versions)
-        // if( PREPROCESSING.out.reads.map{ it[0].single_end }) {
-        //     ch_humann_input = PREPROCESSING.out.reads
-        //         .join( METAPHLAN.out.profiles )
-        // } else {
-        //     ch_humann_input = PREPROCESSING.out.reads
-        //         .join(METAPHLAN.out.profiles)
-        //         .groupTuple()
-        //         .map { id, paths, profile ->  [id, paths.flatten(), profile[0]] }
-        // }
-    } else {
-        // if( PREPROCESSING.out.reads.map{ it[0].single_end }) {
-        //     ch_humann_input = PREPROCESSING.out.reads
-        // } else {
-        //     ch_humann_input = PREPROCESSING.out.reads
-        //         .map{ id, paths ->  [ id, paths.flatten() ] }
-        // }
+    def ch_out_metaphlan = channel.empty()
+    if (!opts.skip_metaphlan) {
+        def metaphlan_out = METAPHLAN(ch_reads)   // not 'metaphlan': an emit name below
+        ch_out_metaphlan = metaphlan_out.results
+        ch_mqc           = ch_mqc.mix(metaphlan_out.profiles)
     }
 
     //
     // SUBWORKFLOW: HUMAnN
-    if( params.skip_humann == false ) {
-        HUMANN ( PREPROCESSING.out.reads, ch_humann_db )
-        ch_versions = ch_versions.mix(HUMANN.out.versions)
+    //
+    def ch_out_humann = channel.empty()
+    if (!opts.skip_humann) {
+        ch_out_humann = HUMANN(ch_reads, opts.humann_db)
     }
 
     //
-    // SUBWORKFLOW: KRAKEN 
+    // SUBWORKFLOW: Kraken2 + Bracken
     //
-    if( params.skip_kraken == false ) {
-        KRAKEN ( PREPROCESSING.out.reads, ch_kraken_db )
-        ch_versions = ch_versions.mix(KRAKEN.out.versions)
+    def ch_out_kraken2 = channel.empty()
+    def ch_out_bracken = channel.empty()
+    if (!opts.skip_kraken) {
+        def kraken = KRAKEN(ch_reads, opts)
+        ch_out_kraken2 = kraken.kraken2
+        ch_out_bracken = kraken.bracken
+        ch_mqc         = ch_mqc.mix(kraken.report)
     }
 
     //
     // SUBWORKFLOW: ShortBRED
     //
-    if( params.skip_shortbred == false ) {
-        SHORTBRED ( ch_humann_input )
-        ch_versions = ch_versions.mix(SHORTBRED.out.versions)
+    def ch_out_shortbred = channel.empty()
+    if (!opts.skip_shortbred) {
+        ch_out_shortbred = SHORTBRED(ch_reads)
     }
 
     //
-    // Subworkflow: Collect software versions
-    //    
-    CUSTOM_DUMPSOFTWAREVERSIONS (
-        ch_versions.unique().collectFile(name: 'collated_versions.yml')
-    )
+    // Record the pipeline git commit. Written by Nextflow itself: no task or container needed.
+    //
+    def ch_commit_hash = channel.of("""
+        You can obtain the exact version of the metagenomicspipeline used for this run
+        by cloning the repo and running the Git command:
+
+        git checkout ${gitCommitHash()}
+        """.stripIndent())
+        .collectFile(name: 'git_commit_hash.txt')
+
+    //
+    // Collect software versions from the 'versions' topic channel.
+    // Each entry is [ process, tool, version ].
+    //
+    def ch_versions_topic: Channel<Tuple> = channel.topic('versions')
+    def ch_versions = ch_versions_topic
+        .map { process, tool, version ->
+            def v = (version instanceof Path) ? version.text.trim() : version.toString().trim()
+            tuple(process.tokenize(':')[-1], tool, v)   // tuple(), not a list: the type checker then knows its 3 parts
+        }
+        .unique()
+
+    // Plain table (always written, independent of MultiQC)
+    def ch_versions_tsv = ch_versions
+        .map { process, tool, version -> "${process}\t${tool}\t${version}" }
+        .collectFile(
+            name: 'software_versions.tsv',
+            seed: "process\tsoftware\tversion",
+            sort: true,
+            newLine: true
+        )
+
+    // YAML grouped per process, as MultiQC's software versions section expects.
+    // Map to strings *before* collectFile: given tuples, collectFile uses the first element as a file name.
+    def ch_versions_yaml = ch_versions
+        .map { process, tool, version -> tuple(process, "    ${tool}: ${version}") }
+        .groupBy()
+        .map { process, lines -> "${process}:\n${lines.toSorted().join('\n')}" }
+        .mix(channel.of(workflowVersionToYAML()))
+        .collectFile(
+            name: 'metagenomicspipeline_software_mqc_versions.yml',
+            sort: true,
+            newLine: true
+        )
 
     //
     // MODULE: MultiQC
     //
-    workflow_summary    = WorkflowMetagenomicspipeline.paramsSummaryMultiqc(workflow, summary_params)
-    ch_workflow_summary = Channel.value(workflow_summary)
+    def methods_description_template = opts.multiqc_methods_description
+        ?: file("${projectDir}/assets/methods_description_template.yml", checkIfExists: true)
 
-    methods_description    = WorkflowMetagenomicspipeline.methodsDescriptionText(workflow, ch_multiqc_custom_methods_description, params)
-    ch_methods_description = Channel.value(methods_description)
+    def ch_workflow_summary = channel.of(paramsSummaryMultiqc(paramsSummaryMap()))
+        .collectFile(name: 'workflow_summary_mqc.yaml')
+    def ch_methods_description = channel.of(methodsDescriptionText(methods_description_template, opts))
+        .collectFile(name: 'methods_description_mqc.yaml')
 
-    ch_multiqc_files = Channel.empty()
-    ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-    ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
-    ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    ch_multiqc_files = ch_multiqc_files.mix(PREPROCESSING.out.fastqc1.collect{it[1]}.ifEmpty([]))
-    ch_multiqc_files = ch_multiqc_files.mix(PREPROCESSING.out.mqc.collect{it[1]}.ifEmpty([]))
-    if(params.skip_metaphlan == false){
-        ch_multiqc_files = ch_multiqc_files.mix(METAPHLAN.out.profiles.collect{it[1]}.ifEmpty([]))
-        ch_multiqc_files = ch_multiqc_files.mix(METAPHLAN.out.mqc.collect{it[1]}.ifEmpty([]))
-    }
-    if(params.skip_kraken == false){
-        ch_multiqc_files = ch_multiqc_files.mix(KRAKEN.out.report.collect{it[1]}.ifEmpty([]))
-        ch_multiqc_files = ch_multiqc_files.mix(KRAKEN.out.mqc.collect{it[1]}.ifEmpty([]))
-    }
+    def multiqc_default = file("${projectDir}/assets/multiqc_config.yml", checkIfExists: true)
+    def multiqc_configs = opts.multiqc_config ? [ multiqc_default, opts.multiqc_config ] : [ multiqc_default ]
+    def multiqc_logo    = opts.multiqc_logo ? [ opts.multiqc_logo ] : []
 
-    MULTIQC (
-        ch_multiqc_files.collect(),
-        ch_multiqc_config.toList(),
-        ch_multiqc_custom_config.toList(),
-        ch_multiqc_logo.ifEmpty([]),
-        [],
-        []
-    )
-    multiqc_report = MULTIQC.out.report.toList()
-}
+    def ch_multiqc_input = channel.empty()
+        .mix(ch_workflow_summary)
+        .mix(ch_methods_description)
+        .mix(ch_versions_yaml)
+        .mix(ch_mqc)
+        .collect()
+        .map { files -> tuple([id: 'multiqc'], files.toList(), multiqc_configs, multiqc_logo, [], []) }
 
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    COMPLETION EMAIL AND SUMMARY
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
+    def multiqc_results = MULTIQC(ch_multiqc_input)
 
-workflow.onComplete {
-    if (params.email || params.email_on_fail) {
-        NfcoreTemplate.email(workflow, params, summary_params, projectDir, log, 
-        //multiqc_report
-        [] )
-    }
-    NfcoreTemplate.dump_parameters(workflow, params)
-    NfcoreTemplate.summary(workflow, params, log)
-    if (params.hook_url) {
-        NfcoreTemplate.IM_notification(workflow, params, summary_params, projectDir, log)
-    }
+    emit:
+    // One channel of files per results folder; the output block in main.nf decides where each goes
+    fastqc: Channel<Path>        = prep.fastqc
+    fastp: Channel<Path>         = prep.fastp
+    bowtie2: Channel<Path>       = prep.bowtie2
+    merged: Channel<Path>        = prep.merged
+    subsampling: Channel<Path>   = prep.subsampling
+    metaphlan: Channel<Path>     = ch_out_metaphlan
+    humann: Channel<Path>        = ch_out_humann
+    kraken2: Channel<Path>       = ch_out_kraken2
+    bracken: Channel<Path>       = ch_out_bracken
+    shortbred: Channel<Path>     = ch_out_shortbred
+    multiqc: Channel<Path>       = multiqc_results.report.mix(multiqc_results.data).mix(multiqc_results.plots).map { _meta, f -> f }
+    pipeline_info: Channel<Path> = channel.empty().mix(ch_commit_hash).mix(ch_versions_tsv).mix(ch_versions_yaml)
 }
 
 /*

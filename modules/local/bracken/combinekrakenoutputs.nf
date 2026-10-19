@@ -1,3 +1,5 @@
+nextflow.enable.types = true
+
 process BRACKEN_COMBINEKRAKENOUTPUTS {
     label 'process_single'
 
@@ -7,38 +9,28 @@ process BRACKEN_COMBINEKRAKENOUTPUTS {
         'biocontainers/pandas:1.4.3' }"
 
     input:
-    path input
+    reports: List<Path>   // Kraken2-style Bracken reports, one per sample
 
     output:
-    path("*.txt")               , emit: txt
-    path "versions.yml"         , emit: versions
+    file('*.txt')
 
-    when:
-    task.ext.when == null || task.ext.when
+    topic:
+    tuple(task.process, 'python', eval('python --version 2>&1 | sed "s/Python //"')) >> 'versions'
+    tuple(task.process, 'pandas', eval('python -c "import pandas; print(pandas.__version__)"')) >> 'versions'
 
     script:
-    def args = task.ext.args ?: ''
+    def args   = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "combined_krakenoutput"
     """
     combine_kraken_outputs.py \\
-        $args \\
-        ${input} \\
+        ${args} \\
+        ${reports.join(' ')} \\
         -o ${prefix}.txt
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: "\$(python --version | awk '{print \$2}')"
-    END_VERSIONS
     """
 
     stub:
     def prefix = task.ext.prefix ?: "combined_krakenoutput"
     """
     touch ${prefix}.txt
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: "\$(python --version | awk '{print \$2}')"
-    END_VERSIONS
     """
 }
