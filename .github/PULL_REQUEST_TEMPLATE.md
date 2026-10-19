@@ -1,25 +1,16 @@
 <!--
-# nf-core/metagenomicspipeline pull request
-
-Many thanks for contributing to nf-core/metagenomicspipeline!
-
-Please fill in the appropriate checklist below (delete whatever is not relevant).
-These are the most common things requested on pull requests (PRs).
-
-Remember that PRs should be made against the dev branch, unless you're preparing a pipeline release.
-
-Learn more about contributing: [CONTRIBUTING.md](https://github.com/nf-core/metagenomicspipeline/tree/master/.github/CONTRIBUTING.md)
+Thanks for contributing to the metagenomicspipeline!
+Describe what the pull request changes and why. Delete the checklist items that do not apply.
+See .github/CONTRIBUTING.md for how to run the checks.
 -->
 
 ## PR checklist
 
 - [ ] This comment contains a description of changes (with reason).
-- [ ] If you've fixed a bug or added code that should be tested, add tests!
-- [ ] If you've added a new tool - have you followed the pipeline conventions in the [contribution docs](https://github.com/nf-core/metagenomicspipeline/tree/master/.github/CONTRIBUTING.md)
-- [ ] If necessary, also make a PR on the nf-core/metagenomicspipeline _branch_ on the [nf-core/test-datasets](https://github.com/nf-core/test-datasets) repository.
-- [ ] Make sure your code lints (`nf-core lint`).
-- [ ] Ensure the test suite passes (`nextflow run . -profile test,docker --outdir <OUTDIR>`).
-- [ ] Usage Documentation in `docs/usage.md` is updated.
-- [ ] Output Documentation in `docs/output.md` is updated.
+- [ ] The code lints: `nextflow lint .` reports no errors.
+- [ ] The tests pass: `nf-test test --profile +docker`. If results change on purpose, the snapshot is updated (`--update-snapshot`) and its diff explained.
+- [ ] New or changed code is covered by a test.
+- [ ] New parameters are in `main.nf` (typed), `nextflow_schema.json` and `docs/parameters.md`.
+- [ ] `docs/usage.md` and `docs/output.md` are updated.
 - [ ] `CHANGELOG.md` is updated.
-- [ ] `README.md` is updated (including new tool citations and authors/contributors).
+- [ ] New tools are cited in `CITATIONS.md`.
