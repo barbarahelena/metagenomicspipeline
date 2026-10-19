@@ -1,33 +1,26 @@
+nextflow.enable.types = true
+
 process KRAKEN2_DB {
-    memory { task.ext.memory }
-    cpus { task.ext.cpus }
-    time { task.ext.time }
-    queue { task.ext.queue }
-    storeDir "db/kraken2"
+    tag db_name
+    storeDir 'db/kraken2'
 
     input:
-    val db_name
-    
+    db_name: String   // core_nt, standard_64gb, standard_16gb or standard_8gb
+
     output:
-    path("${db_name}")                                         , emit: db
+    file(db_name)
+
+    topic:
+    tuple(task.process, 'kraken2_db', db_link(db_name)) >> 'versions'
 
     script:
-    def db_link = db_name == 'core_nt' ? 'k2_core_nt_20241228' :
-                  db_name == 'standard_8gb' ? 'k2_standard_08gb_20241228' :
-                  db_name == 'standard_16gb' ? 'k2_standard_16gb_20241228' :
-                  { error "Unknown database name: ${db_name}" }()
-
     """
     mkdir -p ${db_name}
-    wget -O ${db_name}.tar.gz https://genome-idx.s3.amazonaws.com/kraken/${db_link}.tar.gz
-    
+    wget -O ${db_name}.tar.gz https://genome-idx.s3.amazonaws.com/kraken/${db_link(db_name)}.tar.gz
+
     # Extract preserving original database structure
-    tar -tf ${db_name}.tar.gz | head -10
     tar -xzf ${db_name}.tar.gz -C ${db_name}
-    
     rm ${db_name}.tar.gz
-    
-    # Verify extraction worked
     ls -la ${db_name}/
     """
 
@@ -37,6 +30,19 @@ process KRAKEN2_DB {
     touch ${db_name}/hash.k2d
     touch ${db_name}/opts.k2d
     touch ${db_name}/taxo.k2d
-
     """
+}
+
+// Name of the prebuilt index for each database (https://benlangmead.github.io/aws-indexes/k2)
+def db_link(db_name: String) -> String {
+    def links = [
+        core_nt      : 'k2_core_nt_20241228',
+        standard_64gb: 'k2_standard_20241228',
+        standard_16gb: 'k2_standard_16gb_20241228',
+        standard_8gb : 'k2_standard_08gb_20241228'
+    ]
+    if (!links.containsKey(db_name)) {
+        error "Unknown Kraken2 database name: ${db_name}. Choose one of: ${links.keySet().join(', ')}"
+    }
+    return links[db_name]
 }

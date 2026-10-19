@@ -6,9 +6,7 @@ body:
     attributes:
       value: |
         Before you post this issue, please check the documentation:
-
-        - [nf-core website: troubleshooting](https://nf-co.re/usage/troubleshooting)
-        - [nf-core/metagenomicspipeline pipeline documentation](https://nf-co.re/metagenomicspipeline/usage)
+        - [metagenomicspipeline usage documentation](https://github.com/barbarahelena/metagenomicspipeline/blob/main/docs/usage.md)
 
   - type: textarea
     id: description
@@ -42,9 +40,9 @@ body:
     attributes:
       label: System information
       description: |
-        * Nextflow version _(eg. 23.04.0)_
+        * Nextflow version _(eg. 26.10.0)_
         * Hardware _(eg. HPC, Desktop, Cloud)_
-        * Executor _(eg. slurm, local, awsbatch)_
-        * Container engine: _(e.g. Docker, Singularity, Conda, Podman, Shifter, Charliecloud, or Apptainer)_
-        * OS _(eg. CentOS Linux, macOS, Linux Mint)_
-        * Version of nf-core/metagenomicspipeline _(eg. 1.1, 1.5, 1.8.2)_
+        * Executor _(eg. slurm, local, lsf)_
+        * Container engine: _(e.g. Docker, Singularity, Apptainer, Conda)_
+        * OS _(eg. Rocky Linux, macOS, Ubuntu)_
+        * Version of the metagenomicspipeline _(eg. 2.0.0)_

@@ -1,33 +1,21 @@
-//
-// ShortBRED
-//
+nextflow.enable.types = true
 
+//
+// ShortBRED: marker database download (stored process) and quantification
+//
+include { Reads                             } from './types'
 include { SHORTBRED_MAKEDB                  } from '../../modules/local/shortbred/makedb'
 include { SHORTBRED_SHORTBRED               } from '../../modules/local/shortbred/shortbred'
 
 workflow SHORTBRED {
 
     take:
-    reads
+    reads: Channel<Reads>
 
     main:
-    ch_versions = Channel.empty()
-
-    //
-    // MODULE: ShortBRED get database
-    //
-    SHORTBRED_MAKEDB ( )
-
-    //
-    // MODULE: ShortBRED
-    //
-    SHORTBRED_SHORTBRED (
-        reads,
-        SHORTBRED_MAKEDB.out.db
-    )
-    ch_versions = ch_versions.mix( SHORTBRED_SHORTBRED.out.versions.first() ) // only once since all use same container/conda
+    def db        = SHORTBRED_MAKEDB()
+    def shortbred = SHORTBRED_SHORTBRED(reads, db)
 
     emit:
-    versions = ch_versions                   // channel: [ versions.yml ]
+    shortbred.map { r -> r.shortbred }
 }
-

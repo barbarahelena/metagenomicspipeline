@@ -1,28 +1,24 @@
+nextflow.enable.types = true
+
 process BOWTIE2_BUILD {
-    tag "$fasta"
+    tag fasta.name
     label 'process_high'
     label 'bowtie2'
     storeDir 'db'
 
     input:
-    path(fasta)
+    fasta: Path
 
     output:
-    path "bowtie2/${fasta.baseName}.*.bt2"  , emit: index
-    path "versions.yml"                     , emit: versions
+    index = files("bowtie2/${fasta.baseName}.*.bt2").toSorted { a, b -> a.name <=> b.name }
 
-    when:
-    task.ext.when == null || task.ext.when
+    // No versions topic: eval() fails for storeDir tasks taken from the store. BOWTIE2_FILTERHOST reports bowtie2.
 
     script:
     def args = task.ext.args ?: ''
     """
     mkdir bowtie2
-    bowtie2-build $args --threads $task.cpus $fasta bowtie2/${fasta.baseName}
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        bowtie2: \$(echo \$(bowtie2 --version 2>&1) | sed 's/^.*bowtie2-align-s version //; s/ .*\$//')
-    END_VERSIONS
+    bowtie2-build ${args} --threads ${task.cpus} ${fasta} bowtie2/${fasta.baseName}
     """
 
     stub:
@@ -30,10 +26,5 @@ process BOWTIE2_BUILD {
     mkdir bowtie2
     touch bowtie2/${fasta.baseName}.{1..4}.bt2
     touch bowtie2/${fasta.baseName}.rev.{1,2}.bt2
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        bowtie2: \$(echo \$(bowtie2 --version 2>&1) | sed 's/^.*bowtie2-align-s version //; s/ .*\$//')
-    END_VERSIONS
     """
 }

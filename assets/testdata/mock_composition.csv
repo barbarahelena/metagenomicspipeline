@@ -1,0 +1,9 @@
+organism,taxid,in_kraken2_db,GUT1,GUT2,GUT3
+Bacteroides_fragilis,817,yes,0.35,0.05,0.10
+Phocaeicola_vulgatus,821,yes,0.20,0.10,0.05
+Faecalibacterium_prausnitzii,853,yes,0.15,0.30,0.05
+Escherichia_coli,562,yes,0.10,0.05,0.40
+Bifidobacterium_longum,216816,yes,0.05,0.15,0.25
+Akkermansia_muciniphila,239935,yes,0.05,0.20,0.05
+Methanobrevibacter_smithii,2173,no,0.05,0.10,0.05
+Homo_sapiens,9606,no,0.05,0.05,0.05

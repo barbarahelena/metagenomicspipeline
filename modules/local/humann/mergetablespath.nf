@@ -1,26 +1,24 @@
+nextflow.enable.types = true
+
 process HUMANN_MERGETABLESPATH {
     label 'process_single'
     label 'humann'
-    label 'humann_publish'
     conda "${moduleDir}/environment.yml"
 
     input:
-    path(paths)
+    paths: List<Path>   // *_pathabundance.tsv, one per sample
 
     output:
-    path "pathway_abundance.txt"                    , emit: path
-    path "pathway_abundance_cpm.txt"                , emit: pathcpm
-    path "pathway_abundance_cpm_stratified.txt"     , emit: pathstrata
-    path "pathway_abundance_cpm_unstratified.txt"   , emit: pathnostrata
-    path "versions.yml"                             , emit: versions
+    path         = file('pathway_abundance.txt')
+    pathcpm      = file('pathway_abundance_cpm.txt')
+    pathstrata   = file('pathway_abundance_cpm_stratified.txt')
+    pathnostrata = file('pathway_abundance_cpm_unstratified.txt')
 
-    when:
-    task.ext.when == null || task.ext.when
+    topic:
+    tuple(task.process, 'humann', eval('humann --version 2>&1 | sed "s/humann v//"')) >> 'versions'
 
-    script:    
+    script:
     """
-    echo "directory: \$PWD"
-
     humann_join_tables \\
         --input \$PWD \\
         --output pathway_abundance.txt
@@ -33,21 +31,13 @@ process HUMANN_MERGETABLESPATH {
     humann_split_stratified_table \\
         --input pathway_abundance_cpm.txt \\
         --output ./
-    
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        humann: 3.9
-    END_VERSIONS
     """
+
     stub:
     """
     touch pathway_abundance.txt
     touch pathway_abundance_cpm.txt
     touch pathway_abundance_cpm_stratified.txt
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        humann: 3.9
-    END_VERSIONS
+    touch pathway_abundance_cpm_unstratified.txt
     """
 }

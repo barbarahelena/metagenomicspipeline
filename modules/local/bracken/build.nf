@@ -1,40 +1,38 @@
+nextflow.enable.types = true
+
 process BRACKEN_BUILD {
+    tag kraken_db.name
 
     input:
-    path kraken_db
-    val readlength
-    val kmerlength
+    kraken_db: Path
+    readlength: Integer
+    kmerlength: Integer
 
     output:
-    path("*.kmer_distrib")       , emit: bracken_db
-    path "versions.yml"          , emit: versions
+    file('bracken_db')
 
-    when:
-    task.ext.when == null || task.ext.when
+    topic:
+    tuple(task.process, 'bracken', eval('bracken -v | cut -f2 -d"v"')) >> 'versions'
 
     script:
     def args = task.ext.args ?: ""
+    // bracken-build writes its files into the database folder. Build into a folder of links
+    // to the Kraken2 database, so the input database itself is not modified.
     """
+    mkdir bracken_db
+    ln -s \$(readlink -f ${kraken_db})/* bracken_db/
+
     bracken-build \\
         ${args} \\
-        -d ${kraken_db} \\
+        -d bracken_db \\
         -t ${task.cpus} \\
         -k ${kmerlength} \\
         -l ${readlength}
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        bracken: \$(echo \$(bracken -v) | cut -f2 -d'v')
-    END_VERSIONS
     """
 
     stub:
     """
-    touch "bracken.kmer_distrib"
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        bracken: \$(echo \$(bracken -v) | cut -f2 -d'v')
-    END_VERSIONS
+    mkdir bracken_db
+    touch bracken_db/database${readlength}mers.kmer_distrib
     """
 }

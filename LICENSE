@@ -19,3 +19,14 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+--------------------------------------------------------------------------------
+
+This pipeline includes code from the nf-core project (the pipeline template, the
+modules in modules/nf-core and the subworkflows in subworkflows/nf-core), used
+under the MIT License:
+
+nf-core/tools (pipeline template): Copyright (c) 2018 nf-core
+nf-core/modules (modules and subworkflows): Copyright (c) Philip Ewels
+
+The same permission notice and disclaimer as above apply to that code.

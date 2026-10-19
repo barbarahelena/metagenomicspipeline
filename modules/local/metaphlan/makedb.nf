@@ -1,22 +1,26 @@
+nextflow.enable.types = true
+
 process METAPHLAN_MAKEDB {
     label 'process_medium'
     label 'metaphlan'
     storeDir 'db'
 
     output:
-    path "metaphlan_db"         , emit: db
-
-    when:
-    task.ext.when == null || task.ext.when
+    file('metaphlan_db')
 
     script:
     def args = task.ext.args ?: ''
-
     """
     metaphlan \\
         --install \\
-        --nproc $task.cpus \\
+        --nproc ${task.cpus} \\
         --db_dir metaphlan_db \\
-        $args
+        ${args}
+    """
+
+    stub:
+    """
+    mkdir metaphlan_db
+    touch metaphlan_db/mpa_stub.rev.1.bt2l
     """
 }
