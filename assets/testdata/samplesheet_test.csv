@@ -1,0 +1,5 @@
+sample,run_accession,fastq_1,fastq_2
+GUT1,RUN1,reads/GUT1_RUN1_1.fastq.gz,reads/GUT1_RUN1_2.fastq.gz
+GUT1,RUN2,reads/GUT1_RUN2_1.fastq.gz,reads/GUT1_RUN2_2.fastq.gz
+GUT2,RUN1,reads/GUT2_RUN1_1.fastq.gz,reads/GUT2_RUN1_2.fastq.gz
+GUT3,RUN1,reads/GUT3_RUN1_1.fastq.gz,reads/GUT3_RUN1_2.fastq.gz

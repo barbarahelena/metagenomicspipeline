@@ -1,43 +1,85 @@
-name: nf-core CI
-# This workflow runs the pipeline with the minimal test dataset to check that it completes without any syntax errors
+name: CI
+
 on:
   push:
     branches:
+      - main
       - dev
   pull_request:
-  release:
-    types: [published]
+    branches:
+      - main
+      - dev
 
 env:
   NXF_ANSI_LOG: false
-
-concurrency:
-  group: "${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}"
-  cancel-in-progress: true
+  # Minimum Nextflow version the pipeline supports (keep in sync with manifest.nextflowVersion)
+  NXF_MIN_VER: "26.10.0"
 
 jobs:
-  test:
-    name: Run pipeline with test data
-    # Only run on push if this is the nf-core dev branch (merged PRs)
-    if: "${{ github.event_name != 'push' || (github.event_name == 'push' && github.repository == 'nf-core/metagenomicspipeline') }}"
+  lint:
+    name: nextflow lint
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        NXF_VER:
-          - "23.04.0"
-          - "latest-everything"
     steps:
-      - name: Check out pipeline code
-        uses: actions/checkout@v3
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Java (required for Nextflow)
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
 
       - name: Install Nextflow
-        uses: nf-core/setup-nextflow@v1
+        uses: nf-core/setup-nextflow@v2
         with:
-          version: "${{ matrix.NXF_VER }}"
+          version: ${{ env.NXF_MIN_VER }}
 
-      - name: Run pipeline with test data
-        # TODO nf-core: You can customise CI pipeline run tests as required
-        # For example: adding multiple test runs with different parameters
-        # Remember that you can parallelise this by using strategy.matrix
-        run: |
-          nextflow run ${GITHUB_WORKSPACE} -profile test,docker --outdir ./results
+      # Fails (exit 1) on errors: strict syntax and static type errors.
+      # Warnings are printed but do not fail the job.
+      - name: Lint pipeline
+        run: nextflow lint . -o concise
+
+  nf-test:
+    name: nf-test (Nextflow ${{ matrix.nxf_ver }})
+    needs: lint
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        nxf_ver:
+          - "26.10.0"
+          - "latest-stable"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Java (required for Nextflow)
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install Nextflow
+        uses: nf-core/setup-nextflow@v2
+        with:
+          version: ${{ matrix.nxf_ver }}
+
+      - name: Install nf-test
+        uses: nf-core/setup-nf-test@v1
+        with:
+          version: "0.9.2"
+
+      # tests/default.nf.test: the test profile for real (checksums of the read count table,
+      # Kraken2 and Bracken reports must match tests/default.nf.test.snap), a stub run with all
+      # optional steps (MetaPhlAn, HUMAnN, ShortBRED, bracken-build) and a stub run without preprocessing.
+      - name: Run nf-test
+        run: nf-test test --profile test,docker --verbose
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: nf-test-${{ matrix.nxf_ver }}
+          path: |
+            .nf-test/tests/*/meta/nextflow.log
+            .nf-test.log
