@@ -21,7 +21,8 @@ The pipeline now uses Nextflow's static types (typed processes, workflows and pa
 ### `Changed`
 - nf-validation replaced by nf-schema 3.0.0; samplesheet validation by `assets/schema_input.json` instead of `bin/check_samplesheet.py`
 - `--max_cpus`, `--max_memory` and `--max_time` replaced by `process.resourceLimits` (set in a profile or your own config)
-- nf-core FastQC (0.13.0) and MultiQC (1.35) modules updated
+- FastQC (0.13.0) and MultiQC (1.35) are local typed modules, adapted from nf-core/modules
+- Small text files of the run (versions, git commit, MultiQC sections) are written by a typed `WRITE_FILE` process instead of `collectFile`
 - Without `--perform_runmerging`, a sample name may appear only once in the samplesheet
 - Relative samplesheet paths that do not exist relative to the launch folder are looked up relative to the samplesheet
 

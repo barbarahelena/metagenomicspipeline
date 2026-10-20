@@ -9,10 +9,12 @@ process HUMANN_MERGETABLESPATH {
     paths: List<Path>   // *_pathabundance.tsv, one per sample
 
     output:
-    path         = file('pathway_abundance.txt')
-    pathcpm      = file('pathway_abundance_cpm.txt')
-    pathstrata   = file('pathway_abundance_cpm_stratified.txt')
-    pathnostrata = file('pathway_abundance_cpm_unstratified.txt')
+    record(
+        path: file('pathway_abundance.txt'),
+        pathcpm: file('pathway_abundance_cpm.txt'),
+        pathstrata: file('pathway_abundance_cpm_stratified.txt'),
+        pathnostrata: file('pathway_abundance_cpm_unstratified.txt')
+    )
 
     topic:
     tuple(task.process, 'humann', eval('humann --version 2>&1 | sed "s/humann v//"')) >> 'versions'

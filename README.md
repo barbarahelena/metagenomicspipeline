@@ -85,9 +85,9 @@ metagenomicspipeline was written by Barbara Verhaar. I used the [nf-core/taxprof
 This pipeline uses code and infrastructure developed and maintained by the [nf-core](https://nf-co.re) community, reused here under the [MIT license](https://github.com/nf-core/tools/blob/main/LICENSE):
 
 - the pipeline template structure (`main.nf`, `nextflow.config`, `conf/`, `assets/` e.g. email templates and the MultiQC methods description)
-- the nf-core modules [`fastqc`](https://nf-co.re/modules/fastqc) and [`multiqc`](https://nf-co.re/modules/multiqc)
+- the FastQC and MultiQC modules, adapted from the nf-core modules [`fastqc`](https://nf-co.re/modules/fastqc) and [`multiqc`](https://nf-co.re/modules/multiqc) into typed processes
 - the nf-core subworkflows `utils_nextflow_pipeline`, `utils_nfcore_pipeline` and `utils_nfschema_plugin`
-- [nf-core/tools](https://github.com/nf-core/tools) to install and update these components, and the [nf-schema](https://github.com/nextflow-io/nf-schema) plugin for parameter and samplesheet validation
+- [nf-core/tools](https://github.com/nf-core/tools) to install and update the subworkflows, and the [nf-schema](https://github.com/nextflow-io/nf-schema) plugin for parameter and samplesheet validation
 
 metagenomicspipeline is not an official nf-core pipeline.
 

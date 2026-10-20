@@ -23,9 +23,18 @@ include { KRAKEN                            } from '../subworkflows/local/kraken
 include { SHORTBRED                         } from '../subworkflows/local/shortbred'
 
 //
-// MODULE: nf-core modules
+// MODULE: MultiQC
 //
-include { MULTIQC                           } from '../modules/nf-core/multiqc/main'
+include { MULTIQC                           } from '../modules/local/multiqc'
+
+//
+// MODULE: write the small text files of the run
+//
+include { WRITE_FILE as WRITE_COMMIT_HASH       } from '../modules/local/write_file'
+include { WRITE_FILE as WRITE_VERSIONS_TSV      } from '../modules/local/write_file'
+include { WRITE_FILE as WRITE_VERSIONS_YAML     } from '../modules/local/write_file'
+include { WRITE_FILE as WRITE_WORKFLOW_SUMMARY  } from '../modules/local/write_file'
+include { WRITE_FILE as WRITE_METHODS           } from '../modules/local/write_file'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -86,15 +95,14 @@ workflow METAGENOMICSPIPELINE {
     }
 
     //
-    // Record the pipeline git commit. Written by Nextflow itself: no task or container needed.
+    // Record the pipeline git commit. Written by Nextflow itself: no container or git in a container needed.
     //
-    def ch_commit_hash = channel.of("""
+    def ch_commit_hash = WRITE_COMMIT_HASH('git_commit_hash.txt', """
         You can obtain the exact version of the metagenomicspipeline used for this run
         by cloning the repo and running the Git command:
 
         git checkout ${gitCommitHash()}
         """.stripIndent())
-        .collectFile(name: 'git_commit_hash.txt')
 
     //
     // Collect software versions from the 'versions' topic channel.
@@ -108,28 +116,26 @@ workflow METAGENOMICSPIPELINE {
         }
         .unique()
 
-    // Plain table (always written, independent of MultiQC)
-    def ch_versions_tsv = ch_versions
-        .map { process, tool, version -> "${process}\t${tool}\t${version}" }
-        .collectFile(
-            name: 'software_versions.tsv',
-            seed: "process\tsoftware\tversion",
-            sort: true,
-            newLine: true
-        )
+    // Plain table (always written, independent of MultiQC). collect() waits until every
+    // process has reported; sorting makes the file the same whatever the task order.
+    def ch_versions_tsv = WRITE_VERSIONS_TSV(
+        'software_versions.tsv',
+        ch_versions
+            .map { process, tool, version -> "${process}\t${tool}\t${version}" }
+            .collect()
+            .map { lines -> ([ "process\tsoftware\tversion" ] + lines.toSorted()).join('\n') + '\n' }
+    )
 
-    // YAML grouped per process, as MultiQC's software versions section expects.
-    // Map to strings *before* collectFile: given tuples, collectFile uses the first element as a file name.
-    def ch_versions_yaml = ch_versions
-        .map { process, tool, version -> tuple(process, "    ${tool}: ${version}") }
-        .groupBy()
-        .map { process, lines -> "${process}:\n${lines.toSorted().join('\n')}" }
-        .mix(channel.of(workflowVersionToYAML()))
-        .collectFile(
-            name: 'metagenomicspipeline_software_mqc_versions.yml',
-            sort: true,
-            newLine: true
-        )
+    // YAML grouped per process, as MultiQC's software versions section expects
+    def ch_versions_yaml = WRITE_VERSIONS_YAML(
+        'metagenomicspipeline_software_mqc_versions.yml',
+        ch_versions
+            .map { process, tool, version -> tuple(process, "    ${tool}: ${version}") }
+            .groupBy()
+            .map { process, lines -> "${process}:\n${lines.toSorted().join('\n')}" }
+            .collect()
+            .map { sections -> (sections.toSorted() + [ workflowVersionToYAML() ]).join('\n') + '\n' }
+    )
 
     //
     // MODULE: MultiQC
@@ -137,24 +143,21 @@ workflow METAGENOMICSPIPELINE {
     def methods_description_template = opts.multiqc_methods_description
         ?: file("${projectDir}/assets/methods_description_template.yml", checkIfExists: true)
 
-    def ch_workflow_summary = channel.of(paramsSummaryMultiqc(paramsSummaryMap()))
-        .collectFile(name: 'workflow_summary_mqc.yaml')
-    def ch_methods_description = channel.of(methodsDescriptionText(methods_description_template, opts))
-        .collectFile(name: 'methods_description_mqc.yaml')
+    def ch_workflow_summary    = WRITE_WORKFLOW_SUMMARY('workflow_summary_mqc.yaml', paramsSummaryMultiqc(paramsSummaryMap()))
+    def ch_methods_description = WRITE_METHODS('methods_description_mqc.yaml', methodsDescriptionText(methods_description_template, opts))
 
     def multiqc_default = file("${projectDir}/assets/multiqc_config.yml", checkIfExists: true)
     def multiqc_configs = opts.multiqc_config ? [ multiqc_default, opts.multiqc_config ] : [ multiqc_default ]
-    def multiqc_logo    = opts.multiqc_logo ? [ opts.multiqc_logo ] : []
 
-    def ch_multiqc_input = channel.empty()
+    def ch_multiqc_files = channel.empty()
         .mix(ch_workflow_summary)
         .mix(ch_methods_description)
         .mix(ch_versions_yaml)
         .mix(ch_mqc)
         .collect()
-        .map { files -> tuple([id: 'multiqc'], files.toList(), multiqc_configs, multiqc_logo, [], []) }
+        .map { files -> files.toSorted { a, b -> a.name <=> b.name } }
 
-    def multiqc_results = MULTIQC(ch_multiqc_input)
+    def multiqc_results = MULTIQC(ch_multiqc_files, multiqc_configs, opts.multiqc_logo)
 
     emit:
     // One channel of files per results folder; the output block in main.nf decides where each goes
@@ -168,7 +171,7 @@ workflow METAGENOMICSPIPELINE {
     kraken2: Channel<Path>       = ch_out_kraken2
     bracken: Channel<Path>       = ch_out_bracken
     shortbred: Channel<Path>     = ch_out_shortbred
-    multiqc: Channel<Path>       = multiqc_results.report.mix(multiqc_results.data).mix(multiqc_results.plots).map { _meta, f -> f }
+    multiqc: Channel<Path>       = multiqc_results.flatMap { r -> [ r.report, r.data, r.plots ].findAll { f -> f != null } }
     pipeline_info: Channel<Path> = channel.empty().mix(ch_commit_hash).mix(ch_versions_tsv).mix(ch_versions_yaml)
 }
 
