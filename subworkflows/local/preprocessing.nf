@@ -5,7 +5,7 @@ nextflow.enable.types = true
 //
 include { Sample; Reads; MetagenomicsOptions } from './types'
 include { FASTP                             } from '../../modules/local/fastp'
-include { FASTQC                            } from '../../modules/nf-core/fastqc/main'
+include { FASTQC                            } from '../../modules/local/fastqc'
 include { BOWTIE2_BUILD                     } from '../../modules/local/bowtie2/build'
 include { BOWTIE2_FILTERHOST                } from '../../modules/local/bowtie2/filterhost'
 include { CAT as MERGE_RUNS                 } from '../../modules/local/cat'
@@ -19,11 +19,10 @@ workflow PREPROCESSING {
 
     main:
     //
-    // MODULE: FastQC on the raw reads. nf-core FastQC is untyped and expects tuple(meta, reads).
-    // (Local names must differ from the emit names below.)
+    // MODULE: FastQC on the raw reads, one report per run (local names must differ from the emit names below)
     //
     def fastqc_results = FASTQC(ch_samples.map { s ->
-        tuple([id: s.run_accession ? "${s.id}_${s.run_accession}" : s.id, single_end: s.single_end], s.fastq)
+        record(id: s.run_accession ? "${s.id}_${s.run_accession}" : s.id, fastq: s.fastq)
     })
 
     def ch_reads = ch_samples.map { s -> record(id: s.id, single_end: s.single_end, run_accession: s.run_accession, fastq: s.fastq) }
@@ -111,8 +110,8 @@ workflow PREPROCESSING {
 
     emit:
     reads: Channel<Reads>       = ch_out_reads
-    fastqc_zip: Channel<Path>   = fastqc_results.zip.flatMap { _meta, zips -> [ zips ].flatten() }   // one file (single-end) or a list
-    fastqc: Channel<Path>       = fastqc_results.html.mix(fastqc_results.zip).flatMap { _meta, files -> [ files ].flatten() }
+    fastqc_zip: Channel<Path>   = fastqc_results.flatMap { r -> r.zip }
+    fastqc: Channel<Path>       = fastqc_results.flatMap { r -> r.html + r.zip }
     mqc: Channel<Path>          = ch_mqc
     fastp: Channel<Path>        = ch_out_fastp
     bowtie2: Channel<Path>      = ch_out_bowtie2

@@ -1,4 +1,4 @@
-# Used by nf-core/tools to install and update the nf-core modules and subworkflows (modules.json)
+# Used by nf-core/tools to install and update the nf-core subworkflows (modules.json)
 repository_type: pipeline
 template:
   author: barbarahelena

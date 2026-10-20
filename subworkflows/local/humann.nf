@@ -28,8 +28,5 @@ workflow HUMANN {
         .mix(humann.map { r -> r.reactions })
         .mix(humann.map { r -> r.genes })
         .mix(humann.map { r -> r.log })
-        .mix(merged.path)
-        .mix(merged.pathcpm)
-        .mix(merged.pathstrata)
-        .mix(merged.pathnostrata)
+        .mix(merged.flatMap { m -> [ m.path, m.pathcpm, m.pathstrata, m.pathnostrata ] })
 }

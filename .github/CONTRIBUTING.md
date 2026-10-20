@@ -30,4 +30,4 @@ If a change is meant to alter results, update the expected results with `nf-test
 - **Parameters** are declared, typed, in the `params` block of `main.nf`, and described in `nextflow_schema.json` and `docs/parameters.md`. Parameters that config files read (such as `outdir`) are also set in `nextflow.config`.
 - **Results** are published through the `output` block in `main.nf`: add new result files to a workflow `emit:` channel, not with `publishDir`.
 - **Reproducibility**: steps that take files from several samples get them sorted by name, and multi-threaded tools must not change the order of reads (see `--reorder` in Bowtie2), because subsampling depends on it.
-- The modules in `modules/nf-core` and subworkflows in `subworkflows/nf-core` come from [nf-core/modules](https://github.com/nf-core/modules); update them with `nf-core modules update` rather than editing them.
+- The subworkflows in `subworkflows/nf-core` come from [nf-core/modules](https://github.com/nf-core/modules); update them with `nf-core subworkflows update` rather than editing them. All modules are local (`modules/local`); FastQC and MultiQC were adapted from nf-core/modules.
